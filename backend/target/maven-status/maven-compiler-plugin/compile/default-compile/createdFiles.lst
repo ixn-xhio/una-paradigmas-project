@@ -31,5 +31,6 @@ com/una/ac/cr/paradigms_project/types/ast/ReadNode.class
 com/una/ac/cr/paradigms_project/types/ast/LiteralNode.class
 com/una/ac/cr/paradigms_project/types/ast/VariableDeclarationNode.class
 com/una/ac/cr/paradigms_project/types/ast/ObjectFieldAssignmentNode.class
+com/una/ac/cr/paradigms_project/config/WebConfig.class
 com/una/ac/cr/paradigms_project/service/ExecutorService.class
 com/una/ac/cr/paradigms_project/types/ast/ASTNode.class

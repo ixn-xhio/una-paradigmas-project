@@ -21,7 +21,7 @@ export const languageDef: languages.IMonarchLanguage = {
         [/\s*/, '', '@pop'] // Pops the state if no identifier is found
       ],
     },
-  }
+}
   
 export const theme: editor.IColors = {  }
   
@@ -39,4 +39,4 @@ export const configuration: editor.IStandaloneThemeData = {
       { token: 'number', foreground: '#b5cea8', fontStyle: 'italic' }, // Light green numbers
     ],
     colors: theme
-  }
+}

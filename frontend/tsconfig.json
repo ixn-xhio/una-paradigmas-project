@@ -2,7 +2,7 @@
   "compilerOptions": {
     "jsx": "react",
     "outDir": "lib",
-    "lib": ["es2018"],
+    "lib": ["es2018", "dom"],
     "allowJs": true,
     "module": "CommonJS",
     "esModuleInterop": true,
@@ -10,7 +10,7 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "declaration": true,
-    "types": ["node"],
+    "types": ["node", "dom"],
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "alwaysStrict": true,

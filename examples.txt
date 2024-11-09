@@ -1,0 +1,13 @@
+function sum(a: int, b: int) { 
+return a + b; 
+} 
+public class Point { 
+int x = 10; 
+float y = 20.0; 
+}; 
+Point obj = new Point(); 
+obj.x = 5; 
+read(obj.y); 
+print(obj.x); 
+print(sum(obj.x, obj.y)); 
+print('hola' + 'como esta');

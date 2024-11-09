@@ -1,1 +1,1 @@
-export { reduxReducers } from "./reducers";
+export { reduxReducers } from "../client/reducers";

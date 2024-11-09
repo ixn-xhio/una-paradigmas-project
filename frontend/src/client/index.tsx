@@ -2,19 +2,30 @@
 import { React, ReactSubApp } from "@xarc/react";
 //Redux
 import { reduxFeature, connect } from "@xarc/react-redux";
-import { changeCode, setExecutionId } from "../actions";
-export { reduxReducers } from '../reducers';
 //Configuration for IDE
-import { configuration, languageDef } from "../config/monaco";
-import Editor, { useMonaco,  } from '@monaco-editor/react';
+import Editor, { useMonaco } from '@monaco-editor/react';
+import { configuration, languageDef } from "../config";
+import { executeCode } from "../actions";
+export { reduxReducers } from './reducers';
 
+const changeCode = (code: string) => {
+  return {
+    type: "CHANGE_CODE",
+    payload: code
+  };
+};
 
+const changeSessionId = (code: string) => {
+  return {
+    type: "CHANGE_SESSION_ID",
+    payload: code
+  };
+};
 
 const Client = (props) => {
-  const { value, dispatch } = props;
-  const monaco = useMonaco()
-  console.log(monaco)
-
+  const { code, dispatch } = props;
+  
+  const monaco = useMonaco();
   React.useEffect(() => {
     if (!monaco) return
     // Register a new language
@@ -26,16 +37,25 @@ const Client = (props) => {
     monaco.editor.setTheme('tracta')
   }, [monaco])
 
-  const onChange = (value: string, event) => {
-    dispatch(changeCode(value))
+  const onChange = (v: string, event) => {
+    dispatch(changeCode(v))
+  }
+
+  const onSubmit = async () => {
+    const result = await executeCode(code);
+    if(result !== -1 && result.sessionId && result.requiresInput) {
+      dispatch(changeSessionId(result.sessionId))
+    }
   }
 
   return (
+   <div>
+    <button onClick={onSubmit}>Run</button>
     <Editor
       height="90vh"
       defaultLanguage="tracta"
       theme="tracta"
-      value={value}
+      value={code}
       onChange={onChange}
       loading={false}
       line={30}
@@ -57,14 +77,12 @@ const Client = (props) => {
         rulers: [],
       }}
     />
+   </div>
   )
 }
 
 const mapStateToProps = (state) => {
-  return { 
-    text: state.ide.text.value,
-    id: state.ide.id.value
-  };
+  return { code: state.project.code };
 };
 
 export const subapp: ReactSubApp = {
@@ -75,19 +93,7 @@ export const subapp: ReactSubApp = {
       shareStore: true,
       reducers: true, // true => read the reduxReducers export from this file
       prepare: async (initialState) => {
-        return { 
-          initialState: initialState || 
-          { 
-            ide: {
-              text: { 
-                value: "" 
-              },
-              id: { 
-                value: 0
-              }
-            }
-          } 
-        };
+        return { initialState: initialState || { project: { code: "" } } };
       },
     }),
   ],

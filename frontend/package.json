@@ -45,6 +45,7 @@
     "@xarc/react": "^1.0.0",
     "@xarc/react-query": "^1.0.0",
     "@xarc/react-redux": "^1.0.0",
+    "axios": "^1.7.7",
     "lezer-generator": "^0.13.4"
   },
   "devDependencies": {

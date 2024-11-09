@@ -1,0 +1,59 @@
+{
+  "name": "my-x-app",
+  "version": "0.0.1",
+  "description": "Web application using Electrode X",
+  "homepage": "",
+  "scripts": {
+    "dev": "xrun -q electrode/dev",
+    "test": "xrun electrode/check",
+    "build": "xrun electrode/build",
+    "start": "node lib/server"
+  },
+  "author": {
+    "name": "",
+    "email": "",
+    "url": ""
+  },
+  "contributors": [],
+  "main": "lib/server/index.js",
+  "keywords": [
+    "electrode",
+    "web"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">= 12",
+    "npm": ">= 6"
+  },
+  "prettier": {
+    "printWidth": 100
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.12.5",
+    "@codemirror/language": "^6.10.3",
+    "@desynth/web-components": "^24.7.9-alpha.9",
+    "@desynth/web-components-react": "^24.7.9-alpha.9",
+    "@lezer/lr": "^1.4.2",
+    "@monaco-editor/react": "^4.6.0",
+    "@uiw/react-codemirror": "^4.23.6",
+    "@xarc/app": "^11.0.0",
+    "@xarc/fastify-server": "^3.2.3",
+    "@xarc/react": "^1.0.0",
+    "@xarc/react-query": "^1.0.0",
+    "@xarc/react-redux": "^1.0.0",
+    "lezer-generator": "^0.13.4"
+  },
+  "devDependencies": {
+    "@types/node": "^14.14.6",
+    "@xarc/app-dev": "^11.0.0",
+    "@xarc/opt-postcss": "^2.0.0",
+    "@xarc/opt-stylus": "^2.0.0",
+    "prettier": "^2.2.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3"
+  }
+}

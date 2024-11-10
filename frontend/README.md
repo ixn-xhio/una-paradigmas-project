@@ -1,84 +1,36 @@
-# my-x-app
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Welcome to your React application using Electrode X.
+## Getting Started
 
-## Development
+First, run the development server:
 
-Some initial things to do and try:
-
-1. Update your `package.json` to fill in some information.
-
-   - `name`, `description`, `homepage`, `author`
-
-2. Start doing some testing and development
-
-   - First install dependencies
-
-```
-npm install
-```
-
-- Then to develop your app, do
-
-```
+```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-- Once App is running, point browser to <http://localhost:3000>
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-3. Try adding some simple text to `src/home/index.ts` or `src/demo1/index.ts`.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-4. Create some React components and add them to the home or demo subapp.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-5. Enable some optional features in `xclap.ts` when calling `loadXarcDevTasks`.
+## Learn More
 
-6. Create a repo and push your app to <https://www.github.com>, and update `repository` in `package.json`.
+To learn more about Next.js, take a look at the following resources:
 
-7. Contribute to the [Electrode Platform](https://github.com/electrode-io/electrode/blob/master/CONTRIBUTING.md).
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## Styling Support
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-To enable extra CSS styling processing, install these optional npm packages.
+## Deploy on Vercel
 
-| module              | note                                                             |
-| ------------------- | ---------------------------------------------------------------- |
-| `@xarc/opt-postcss` | This is the base styling processing using PostCSS. Always needed |
-| `@xarc/opt-stylus`  | Install if you want to use `.styl` files                         |
-| `@xarc/opt-less`    | Install if you want to use `.less` files                         |
-| `@xarc/opt-sass`    | Install if you want to use `.sass` or `.scss` files              |
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-For example, to support `.styl` files:
-
-`npm i --save-dev @xarc/opt-postcss @xarc/opt-stylus`
-
-And you can just add code to your files that imports style files:
-
-`import from "my-styles.css"`
-
-### CSS Module Support
-
-By default, CSS module is only enabled for `.css` files with name that ends with `.mod.css` or `.module.css`. ie: `my-styles.mod.css`
-
-And you can use CSS modules like this:
-
-```tsx
-import styles from "my-styles.mod.css";
-
-export const demoComponent = () => <p className={styles.someStyle}>hello</p>;
-```
-
-If you want to enable CSS module support for other files, like `my-styles.mod.styl`,
-then set options when calling `loadDevTasks` in `xrun-tasks.ts`:
-
-```ts
-loadDevTasks(xrun, {
-  // options to customize features
-  webpackOptions: {
-    cssModuleSupport: "byModExt"
-  }
-});
-```
-
-## Resources
-
-- Check Electrode docs at <https://www.electrode.io/electrode/>
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

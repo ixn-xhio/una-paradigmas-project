@@ -1,4 +1,4 @@
-import { codeService } from "../services/code/CodeService";
+import { codeService } from "../services/codeService";
 
 export const executeCode = async (code: string) => {
     const result = await codeService.executeCode({ code });

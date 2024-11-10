@@ -1,4 +1,4 @@
-import { HttpClient } from '../../config/httpClient'; // Asegúrate de que HttpClient esté importado correctamente
+import { HttpClient } from '../config/httpClient'; // Asegúrate de que HttpClient esté importado correctamente
 
 interface ExecuteCodeRequest {
   code: string;

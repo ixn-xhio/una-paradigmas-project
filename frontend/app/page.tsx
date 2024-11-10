@@ -41,7 +41,7 @@ export default function Home() {
       <Header onSubmit={onSubmit}/>
       <div style={{ marginTop: "50px"}}>
         <Editor
-          height="90vh"
+          height="95vh"
           defaultLanguage="tracta"
           theme="tracta"
           value={code}

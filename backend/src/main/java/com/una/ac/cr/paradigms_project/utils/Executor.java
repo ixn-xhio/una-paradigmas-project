@@ -126,7 +126,48 @@ public class Executor {
             Object returnValue = returnNode.getExpression().evaluate(context);
             throw new ReturnException(returnValue);
         }
-        else {
+        else if (statement instanceof IfNode) {
+            IfNode ifNode = (IfNode) statement;
+            boolean condition = (boolean) ifNode.getCondition().evaluate(context);
+        
+            logger.info("IfNode condition evaluated to: " + condition);
+        
+            List<ASTNode> branchToExecute = condition ? ifNode.getTrueBranch() : ifNode.getFalseBranch();
+        
+            for (ASTNode branchStatement : branchToExecute) {
+                executeStatement(branchStatement, context, outputs);
+                
+                if (context.isWaitingForInput()) {
+                    return;
+                }
+            }
+        } else if (statement instanceof ForRangeNode) {
+            ForRangeNode forNode = (ForRangeNode) statement;
+            List<ASTNode> bodyToExecute = forNode.getBody();
+
+            logger.info("Executing forNode with body of size: " + bodyToExecute.size());
+        
+            int start = (int) forNode.getStartExpr().evaluate(context); 
+            int end = (int) forNode.getEndExpr().evaluate(context); 
+        
+            int increment = 1;
+            if (forNode.getIncrementExpr() != null) {
+                increment = (int) forNode.getIncrementExpr().evaluate(context); 
+            }
+            for (int i = start; i <= end; i += increment) {
+                for (ASTNode branchStatement : bodyToExecute) {
+                    executeStatement(branchStatement, context, outputs);
+                    
+                    if (context.isWaitingForInput()) {
+                        return;
+                    }
+                }
+            }
+            
+            logger.info("Start of cicle: " + start);
+            logger.info("End of cicle " + end);
+            logger.info("Iterative value: " + increment);
+        } else {
             String errorMsg = "Unknown statement type: " + statementType;
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
@@ -246,6 +287,7 @@ public class Executor {
                 executeStatement(statement, context, outputs);
     
                 if (context.isWaitingForInput()) {
+                    // deuda tecnica xd
                     throw new RuntimeException("Functions cannot perform read operations.");
                 }
     

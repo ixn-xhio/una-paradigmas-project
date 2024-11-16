@@ -8,6 +8,7 @@ com/una/ac/cr/paradigms_project/utils/Executor.class
 com/una/ac/cr/paradigms_project/utils/Parser.class
 com/una/ac/cr/paradigms_project/types/ast/Parameter.class
 com/una/ac/cr/paradigms_project/utils/Lexer.class
+com/una/ac/cr/paradigms_project/types/ast/IfNode.class
 com/una/ac/cr/paradigms_project/types/ast/FieldNode.class
 com/una/ac/cr/paradigms_project/utils/Function.class
 com/una/ac/cr/paradigms_project/utils/ExecutorContext.class
@@ -25,7 +26,10 @@ com/una/ac/cr/paradigms_project/utils/ExecutorState.class
 com/una/ac/cr/paradigms_project/Application.class
 com/una/ac/cr/paradigms_project/model/InputRequest.class
 com/una/ac/cr/paradigms_project/utils/ReturnException.class
+com/una/ac/cr/paradigms_project/types/ast/DoWhileNode.class
 com/una/ac/cr/paradigms_project/types/ast/AssignmentNode.class
+com/una/ac/cr/paradigms_project/types/ast/ForEachNode.class
+com/una/ac/cr/paradigms_project/types/ast/ForRangeNode.class
 com/una/ac/cr/paradigms_project/types/ast/PrintNode.class
 com/una/ac/cr/paradigms_project/types/ast/ReadNode.class
 com/una/ac/cr/paradigms_project/types/ast/LiteralNode.class
@@ -33,4 +37,5 @@ com/una/ac/cr/paradigms_project/types/ast/VariableDeclarationNode.class
 com/una/ac/cr/paradigms_project/types/ast/ObjectFieldAssignmentNode.class
 com/una/ac/cr/paradigms_project/config/WebConfig.class
 com/una/ac/cr/paradigms_project/service/ExecutorService.class
+com/una/ac/cr/paradigms_project/types/ast/WhileNode.class
 com/una/ac/cr/paradigms_project/types/ast/ASTNode.class

@@ -29,7 +29,7 @@ export const configuration: editor.IStandaloneThemeData = {
     base: 'vs-dark',
     inherit: true,
     rules: [
-      { token: 'delimiter.curly', foreground: '#FF0000', fontStyle: 'italic' }, // Styling for curly braces
+      { token: 'delimiter.curly', foreground: '#ffbf00', fontStyle: 'italic' }, // Styling for curly braces
       { token: 'variable', foreground: '#ff1caf', fontStyle: 'italic' }, // Styling for curly braces
       { token: 'keyword', foreground: '#569cd6', fontStyle: 'italic' }, // Blue keywords
       { token: 'type', foreground: '#4ec9b0', fontStyle: 'italic' }, // Green data types

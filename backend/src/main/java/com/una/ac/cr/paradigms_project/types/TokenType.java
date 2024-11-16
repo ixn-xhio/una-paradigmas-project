@@ -28,5 +28,16 @@ public enum TokenType {
     MULTIPLY,
     DIVIDE,
     RETURN,
+    WHILE,
+    DO,
+    LEFT_ARROW,
+    INCREMENT_OPERATOR,
+    DECREMENT_OPERATOR,
+    FOR,
+    OF,
+    IF,
+    ELSE,
+    LESS,
+    GREATER,
     EOF
 }

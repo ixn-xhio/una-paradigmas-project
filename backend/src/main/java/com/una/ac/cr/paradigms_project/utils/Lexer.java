@@ -90,6 +90,21 @@ public class Lexer {
                     case "return":
                         tokens.add(new Token(TokenType.RETURN, id));
                         break;
+                    case "if":
+                        tokens.add(new Token(TokenType.IF, id));
+                        break;
+                    case "else":
+                        tokens.add(new Token(TokenType.ELSE, id));
+                        break;
+                    case "do":
+                        tokens.add(new Token(TokenType.DO, id));
+                        break;
+                    case "while":
+                        tokens.add(new Token(TokenType.WHILE, id));
+                        break;
+                    case "for":
+                        tokens.add(new Token(TokenType.FOR, id));
+                        break;
                     default:
                         tokens.add(new Token(TokenType.IDENTIFIER, id));
                         break;
@@ -138,13 +153,26 @@ public class Lexer {
                     tokens.add(new Token(TokenType.DOT, "."));
                     advance();
                     break;
-                case '+':
-                    tokens.add(new Token(TokenType.PLUS, "+"));
+                case '+':  
                     advance();
+                    if(currentChar == '='){ // Check for '+='
+                        tokens.add(new Token(TokenType.INCREMENT_OPERATOR, "+="));
+                        advance();
+                    } else { // Just a single '+'
+                        tokens.add(new Token(TokenType.PLUS, "+"));
+                    }
                     break;
                 case '-':
-                    tokens.add(new Token(TokenType.MINUS, "-"));
                     advance();
+                    if(currentChar == '='){ // Check for '-='
+                        tokens.add(new Token(TokenType.DECREMENT_OPERATOR, "-="));
+                        advance();
+                    } else if(currentChar == '>'){
+                        tokens.add(new Token(TokenType.LEFT_ARROW, "->"));
+                        advance();
+                    } else { 
+                        tokens.add(new Token(TokenType.MINUS, "-"));
+                    }
                     break;
                 case '*':
                     tokens.add(new Token(TokenType.MULTIPLY, "*"));
@@ -156,6 +184,14 @@ public class Lexer {
                     break;
                 case '\'':
                     tokens.add(new Token(TokenType.STRING, "'"));
+                    advance();
+                    break;
+                case '>':
+                    tokens.add(new Token(TokenType.GREATER, ">"));
+                    advance();
+                    break;
+                case '<':
+                    tokens.add(new Token(TokenType.LESS, "<"));
                     advance();
                     break;
                 default:

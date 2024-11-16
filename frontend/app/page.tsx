@@ -15,8 +15,10 @@ export default function Home() {
 
   const onSubmit = useCallback(async () => {
     const result = await executeCode(code);
-    if(result !== -1 && result.sessionId && result.requiresInput) {
-      setSessionId(result.sessionId);
+    if(result !== -1) {
+      if(result.sessionId) {
+        setSessionId(result.sessionId);
+      }
       setLogs(result.outputs);
     }
   }, [code]);
@@ -81,7 +83,7 @@ export default function Home() {
           loading={false}
           line={30}
           options={{
-            lineNumbers: 'relative',
+            lineNumbers: 'on',
             minimap: { enabled: false },
             readOnly: false,
             scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
@@ -90,7 +92,7 @@ export default function Home() {
             fontFamily: 'Geist',
             fontSize: 14,
             lineHeight: 20,
-            lineDecorationsWidth: 5,
+            lineDecorationsWidth: 10,
             glyphMargin: false,
             renderLineHighlight: 'none',
             overviewRulerBorder: false,

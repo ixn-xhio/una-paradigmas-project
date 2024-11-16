@@ -47,6 +47,7 @@ public class Parser {
         }
         if(currentToken.getType() == TokenType.IDENTIFIER){
             Token next = peek();
+            System.out.println(currentToken.getValue());
             if(next.getType() == TokenType.ASSIGN){
                 return assignment();
             } else if(next.getType() == TokenType.DOT){
@@ -63,6 +64,13 @@ public class Parser {
         }
         if(currentToken.getType() == TokenType.RETURN){
             return returnStatement();
+        }
+        if(currentToken.getType() == TokenType.IF){
+            return ifStatement();
+        }
+        // Nueva verificación para forStatement
+        if(currentToken.getType() == TokenType.FOR){
+            return forStatement();
         }
         throw new RuntimeException("Unexpected token: " + currentToken.getValue());
     }
@@ -203,8 +211,19 @@ public class Parser {
         return params;
     }
 
-    private ExpressionNode expression(){
-        return additiveExpression();
+    private ExpressionNode expression() {
+        return comparisonExpression();
+    }
+
+    private ExpressionNode comparisonExpression() {
+        ExpressionNode node = additiveExpression();
+        while (currentToken.getType() == TokenType.GREATER || currentToken.getType() == TokenType.LESS || currentToken.getType() == TokenType.ASSIGN) {
+            String operator = currentToken.getValue();
+            consume(currentToken.getType());
+            ExpressionNode right = additiveExpression();
+            node = new BinaryExpressionNode(node, operator, right);
+        }
+        return node;
     }
 
     private ExpressionNode additiveExpression(){
@@ -229,6 +248,70 @@ public class Parser {
         return node;
     }
 
+    private ASTNode ifStatement() {
+        // Debugging information for token flow
+        System.out.println("Parsing if statement, current token: " + currentToken.getType());
+    
+        consume(TokenType.IF);
+        consume(TokenType.LPAREN);
+        ExpressionNode condition = expression(); // Parse the initial if condition
+        consume(TokenType.RPAREN);
+        consume(TokenType.LBRACE);
+        List<ASTNode> ifBody = new ArrayList<>();
+    
+        // Parse statements inside the initial if block
+        while (currentToken.getType() != TokenType.RBRACE) {
+            ifBody.add(statement());
+        }
+        consume(TokenType.RBRACE);
+    
+        // List to store else-if branches
+        List<IfNode> elseIfBranches = new ArrayList<>();
+    
+        // Parse any number of else-if or else blocks
+        while (currentToken.getType() == TokenType.ELSE) {
+            System.out.println("Parsing else block, current token: " + currentToken.getType());
+    
+            consume(TokenType.ELSE);
+    
+            // Check if it is an "else if" block
+            if (currentToken.getType() == TokenType.IF) {
+                consume(TokenType.IF);
+                consume(TokenType.LPAREN);
+                ExpressionNode elseIfCondition = expression();
+                consume(TokenType.RPAREN);
+                consume(TokenType.LBRACE);
+    
+                List<ASTNode> elseIfBody = new ArrayList<>();
+                while (currentToken.getType() != TokenType.RBRACE) {
+                    elseIfBody.add(statement());
+                }
+                consume(TokenType.RBRACE);
+    
+                // Add the else-if branch to the list
+                elseIfBranches.add(new IfNode(elseIfCondition, elseIfBody, null, null));
+            } else if (currentToken.getType() == TokenType.LBRACE) { 
+                // Handle a standalone "else" block
+                consume(TokenType.LBRACE);
+                List<ASTNode> elseBody = new ArrayList<>();
+    
+                while (currentToken.getType() != TokenType.RBRACE) {
+                    elseBody.add(statement());
+                }
+                consume(TokenType.RBRACE);
+    
+                // Return an IfNode with the initial condition, else-if branches, and else body
+                return new IfNode(condition, ifBody, elseIfBranches, elseBody);
+            } else {
+                // If the token does not match the expected patterns, output an error message
+                throw new RuntimeException("Unexpected token in else block: " + currentToken.getType());
+            }
+        }
+    
+        // Return an IfNode without an else block
+        return new IfNode(condition, ifBody, elseIfBranches, null);
+    }     
+    
     private ExpressionNode primaryExpression(){
         Token token = currentToken;
         if(token.getType() == TokenType.NEW){
@@ -273,6 +356,84 @@ public class Parser {
         }
         throw new RuntimeException("Unexpected token in expression: " + token.getValue());
     }
+
+    private ASTNode forStatement() {
+        consume(TokenType.FOR); 
+        consume(TokenType.LPAREN); 
+    
+        // Distinguimos entre las dos variantes de `for`
+        if (currentToken.getType() == TokenType.IDENTIFIER) {
+            Token elementName = currentToken;
+            consume(TokenType.IDENTIFIER); // el nombre de la variable `e`
+            consume(TokenType.OF); // `of` keyword
+            ExpressionNode arrayExpression = expression(); // expresión que evalúa `array`
+            consume(TokenType.RPAREN);
+            consume(TokenType.LBRACE);
+    
+            List<ASTNode> body = new ArrayList<>();
+            while (currentToken.getType() != TokenType.RBRACE) {
+                body.add(statement());
+            }
+            consume(TokenType.RBRACE);
+    
+            return new ForEachNode(elementName, arrayExpression, body);
+        } else {
+            // Parse `for (0 -> 5000, += 1)`
+            ExpressionNode startExpr = expression(); // `0`
+            consume(TokenType.LEFT_ARROW); // `->`
+            ExpressionNode endExpr = expression(); // `5000`
+            consume(TokenType.COMMA); // `,`
+            Token incrementOperator = currentToken;
+            consume(TokenType.INCREMENT_OPERATOR); // `+=`
+            ExpressionNode incrementExpr = expression(); // `1`
+            consume(TokenType.RPAREN);
+            consume(TokenType.LBRACE);
+    
+            List<ASTNode> body = new ArrayList<>();
+            while (currentToken.getType() != TokenType.RBRACE) {
+                body.add(statement());
+            }
+            consume(TokenType.RBRACE);
+    
+            return new ForRangeNode(startExpr, endExpr, incrementOperator, incrementExpr, body);
+        }
+    }
+    
+    private ASTNode whileStatement() {
+        if (currentToken.getType() == TokenType.WHILE) {
+            consume(TokenType.WHILE);
+            consume(TokenType.LPAREN);
+            ExpressionNode condition = expression(); // `(boolean == true)`
+            consume(TokenType.RPAREN);
+            consume(TokenType.LBRACE);
+    
+            List<ASTNode> body = new ArrayList<>();
+            while (currentToken.getType() != TokenType.RBRACE) {
+                body.add(statement());
+            }
+            consume(TokenType.RBRACE);
+    
+            return new WhileNode(condition, body);
+        } else if (currentToken.getType() == TokenType.DO) {
+            consume(TokenType.DO);
+            consume(TokenType.LBRACE);
+    
+            List<ASTNode> body = new ArrayList<>();
+            while (currentToken.getType() != TokenType.RBRACE) {
+                body.add(statement());
+            }
+            consume(TokenType.RBRACE);
+            
+            consume(TokenType.WHILE);
+            consume(TokenType.LPAREN);
+            ExpressionNode condition = expression(); // `(boolean == true)`
+            consume(TokenType.RPAREN);
+    
+            return new DoWhileNode(condition, body);
+        } else {
+            throw new RuntimeException("Expected 'while' or 'do' statement");
+        }
+    }    
 
     private List<ExpressionNode> argumentList(){
         List<ExpressionNode> args = new ArrayList<>();

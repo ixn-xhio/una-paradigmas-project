@@ -7,33 +7,33 @@ public class BinaryExpressionNode extends ExpressionNode {
     private ExpressionNode right;
     private String operator;
 
-    public BinaryExpressionNode(ExpressionNode left, String operator, ExpressionNode right){
+    public BinaryExpressionNode(ExpressionNode left, String operator, ExpressionNode right) {
         this.left = left;
         this.operator = operator;
         this.right = right;
     }
 
-    public ExpressionNode getLeft(){
+    public ExpressionNode getLeft() {
         return left;
     }
 
-    public ExpressionNode getRight(){
+    public ExpressionNode getRight() {
         return right;
     }
 
-    public String getOperator(){
+    public String getOperator() {
         return operator;
     }
 
     @Override
-    public Object evaluate(ExecutorContext context){
+    public Object evaluate(ExecutorContext context) {
         Object leftVal = left.evaluate(context);
         Object rightVal = right.evaluate(context);
 
-        if(leftVal instanceof Integer && rightVal instanceof Integer){
+        if (leftVal instanceof Integer && rightVal instanceof Integer) {
             int l = (Integer) leftVal;
             int r = (Integer) rightVal;
-            switch(operator){
+            switch (operator) {
                 case "+":
                     return l + r;
                 case "-":
@@ -42,15 +42,23 @@ public class BinaryExpressionNode extends ExpressionNode {
                     return l * r;
                 case "/":
                     return l / r;
+                case ">":
+                    return l > r;
+                case "<":
+                    return l < r;
+                case ">=":
+                    return l >= r;
+                case "<=":
+                    return l <= r;
                 default:
                     throw new RuntimeException("Unknown operator: " + operator);
             }
         }
 
-        if(leftVal instanceof Float && rightVal instanceof Float){
+        if (leftVal instanceof Float && rightVal instanceof Float) {
             float l = (Float) leftVal;
             float r = (Float) rightVal;
-            switch(operator){
+            switch (operator) {
                 case "+":
                     return l + r;
                 case "-":
@@ -59,15 +67,23 @@ public class BinaryExpressionNode extends ExpressionNode {
                     return l * r;
                 case "/":
                     return l / r;
+                case ">":
+                    return l > r;
+                case "<":
+                    return l < r;
+                case ">=":
+                    return l >= r;
+                case "<=":
+                    return l <= r;
                 default:
                     throw new RuntimeException("Unknown operator: " + operator);
             }
         }
 
-        if(leftVal instanceof String && rightVal instanceof String){
+        if (leftVal instanceof String && rightVal instanceof String) {
             String l = (String) leftVal;
             String r = (String) rightVal;
-            switch(operator){
+            switch (operator) {
                 case "+":
                     return l + r;
                 default:

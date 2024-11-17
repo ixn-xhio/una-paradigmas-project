@@ -133,7 +133,7 @@ public class Executor {
                         : getDefaultFieldValue(fieldNode.getType());
         
                     instance.put(fieldNode.getName(), defaultValue);
-                } else if (fieldValue instanceof Integer || fieldValue instanceof Float || fieldValue instanceof String) {
+                } else if (fieldValue instanceof Integer || fieldValue instanceof Float || fieldValue instanceof String || fieldValue instanceof Boolean) {
                     // Direct Integer, Float, or String field handling
                     instance.put(fieldName, fieldValue);
                 } else {

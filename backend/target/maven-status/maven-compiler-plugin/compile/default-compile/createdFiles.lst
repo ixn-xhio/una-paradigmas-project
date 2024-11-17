@@ -10,6 +10,7 @@ com/una/ac/cr/paradigms_project/types/ast/Parameter.class
 com/una/ac/cr/paradigms_project/utils/Lexer.class
 com/una/ac/cr/paradigms_project/types/ast/IfNode.class
 com/una/ac/cr/paradigms_project/types/ast/FieldNode.class
+com/una/ac/cr/paradigms_project/types/ast/BoolCastExpressionNode.class
 com/una/ac/cr/paradigms_project/utils/Function.class
 com/una/ac/cr/paradigms_project/utils/ExecutorContext.class
 com/una/ac/cr/paradigms_project/types/ast/ClassNode.class

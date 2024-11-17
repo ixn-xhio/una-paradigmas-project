@@ -110,7 +110,7 @@ public class Parser {
         Token typeToken = currentToken;
     
         // Handle primitive types like int, float, or integer
-        if (typeToken.getType() == TokenType.INT || typeToken.getType() == TokenType.FLOAT || typeToken.getType() == TokenType.INTEGER) {
+        if (typeToken.getType() == TokenType.INT || typeToken.getType() == TokenType.FLOAT || typeToken.getType() == TokenType.INTEGER || typeToken.getType() == TokenType.BOOL) {
             consume(typeToken.getType());
             String name = consume(TokenType.IDENTIFIER).getValue(); // Variable name
             consume(TokenType.ASSIGN); // Consume '='
@@ -126,7 +126,7 @@ public class Parser {
     
             // Accept primitive types (int, float, etc.) or custom identifiers
             String elementType;
-            if (currentToken.getType() == TokenType.INT || currentToken.getType() == TokenType.FLOAT) {
+            if (currentToken.getType() == TokenType.INT || currentToken.getType() == TokenType.FLOAT || typeToken.getType() == TokenType.BOOL) {
                 elementType = consume(currentToken.getType()).getValue(); // Handle primitives like int
             } else if (currentToken.getType() == TokenType.IDENTIFIER) {
                 elementType = consume(TokenType.IDENTIFIER).getValue(); // Handle identifiers like T
@@ -398,7 +398,26 @@ public class Parser {
     
             return new VariableReferenceNode(varName);
         }
-    
+
+        if (token.getType() == TokenType.TRUE || token.getType() == TokenType.FALSE) {
+            consume(token.getType());
+            return new LiteralNode(token.getType() == TokenType.TRUE); // `true` maps to `true`, `false` maps to `false`
+        }
+
+        // Detect `bool(expression)` syntax
+        if (token.getType() == TokenType.BOOL) {
+            consume(TokenType.BOOL);
+            consume(TokenType.LPAREN); // Consume '('
+            ExpressionNode innerExpression = expression(); // Parse inner expression
+            consume(TokenType.RPAREN); // Consume ')'
+            return new BoolCastExpressionNode(innerExpression); // Return a bool cast node
+        }
+
+        if (token.getType() == TokenType.TRUE || token.getType() == TokenType.FALSE) {
+            consume(token.getType());
+            return new LiteralNode(token.getType() == TokenType.TRUE); // `true` maps to `true`, `false` maps to `false`
+        }        
+
         // Check for array literal
         if (token.getType() == TokenType.LBRACKET) {
             consume(TokenType.LBRACKET);

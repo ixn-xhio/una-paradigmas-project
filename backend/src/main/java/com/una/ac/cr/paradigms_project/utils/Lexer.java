@@ -86,11 +86,14 @@ public class Lexer {
                     case "int":
                         tokens.add(new Token(TokenType.INT, id));
                         break;
+                    case "integer": // Added case for 'integer'
+                        tokens.add(new Token(TokenType.INTEGER, id));
+                        break;
                     case "float":
                         tokens.add(new Token(TokenType.FLOAT, id));
                         break;
-                    case "integer": // Added case for 'integer'
-                        tokens.add(new Token(TokenType.INTEGER, id));
+                    case "bool": // Added case for 'integer'
+                        tokens.add(new Token(TokenType.BOOL, id));
                         break;
                     case "read":
                         tokens.add(new Token(TokenType.READ, id));
@@ -115,6 +118,12 @@ public class Lexer {
                         break;
                     case "while":
                         tokens.add(new Token(TokenType.WHILE, id));
+                        break;
+                    case "true":
+                        tokens.add(new Token(TokenType.TRUE, id));
+                        break;
+                    case "false":
+                        tokens.add(new Token(TokenType.FALSE, id));
                         break;
                     case "for":
                         tokens.add(new Token(TokenType.FOR, id));

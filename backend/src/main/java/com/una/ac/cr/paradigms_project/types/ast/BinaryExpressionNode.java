@@ -54,6 +54,8 @@ public class BinaryExpressionNode extends ExpressionNode {
                     return l >= r;
                 case "<=":
                     return l <= r;
+                case "==":
+                    return l == r;
                 default:
                     throw new RuntimeException("Unknown operator: " + operator);
             }
@@ -79,6 +81,8 @@ public class BinaryExpressionNode extends ExpressionNode {
                     return l >= r;
                 case "<=":
                     return l <= r;
+                case "==":
+                    return l == r;
                 default:
                     throw new RuntimeException("Unknown operator: " + operator);
             }
@@ -90,8 +94,21 @@ public class BinaryExpressionNode extends ExpressionNode {
             switch (operator) {
                 case "+":
                     return l + r;
+                case "==":
+                    return l == r;
                 default:
                     throw new RuntimeException("Unknown operator: " + operator + " for String operations");
+            }
+        }
+        // Boolean operations
+        if (leftVal instanceof Boolean && rightVal instanceof Boolean) {
+            boolean l = (Boolean) leftVal;
+            boolean r = (Boolean) rightVal;
+            switch (operator) {
+                case "==":
+                    return l == r;
+                default:
+                    throw new RuntimeException("Unknown operator: " + operator + " for Boolean operations");
             }
         }
 

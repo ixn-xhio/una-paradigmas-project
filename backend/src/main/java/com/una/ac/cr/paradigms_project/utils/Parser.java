@@ -73,6 +73,10 @@ public class Parser {
         if(currentToken.getType() == TokenType.FOR){
             return forStatement();
         }
+        // Nueva verificación para forStatement
+        if(currentToken.getType() == TokenType.DO){
+            return whileStatement();
+        }
         throw new RuntimeException("Unexpected token: " + currentToken.getValue());
     }
 
@@ -252,7 +256,7 @@ public class Parser {
 
     private ExpressionNode comparisonExpression() {
         ExpressionNode node = additiveExpression();
-        while (currentToken.getType() == TokenType.GREATER || currentToken.getType() == TokenType.LESS || currentToken.getType() == TokenType.ASSIGN) {
+        while (currentToken.getType() == TokenType.GREATER || currentToken.getType() == TokenType.LESS || currentToken.getType() == TokenType.ASSIGN || currentToken.getType() == TokenType.EQUALS) {
             String operator = currentToken.getValue();
             consume(currentToken.getType());
             ExpressionNode right = additiveExpression();
@@ -260,7 +264,7 @@ public class Parser {
         }
         return node;
     }
-
+    
     private ExpressionNode additiveExpression(){
         ExpressionNode node = multiplicativeExpression();
         while(currentToken.getType() == TokenType.PLUS || currentToken.getType() == TokenType.MINUS){
@@ -512,7 +516,7 @@ public class Parser {
         if (currentToken.getType() == TokenType.WHILE) {
             consume(TokenType.WHILE);
             consume(TokenType.LPAREN);
-            ExpressionNode condition = expression(); // `(boolean == true)`
+            ExpressionNode condition = expression(); // Parse the condition (e.g., `obj.b == true`)
             consume(TokenType.RPAREN);
             consume(TokenType.LBRACE);
     
@@ -532,11 +536,12 @@ public class Parser {
                 body.add(statement());
             }
             consume(TokenType.RBRACE);
-            
+    
             consume(TokenType.WHILE);
             consume(TokenType.LPAREN);
-            ExpressionNode condition = expression(); // `(boolean == true)`
+            ExpressionNode condition = expression(); // Parse the condition (e.g., `obj.b == true`)
             consume(TokenType.RPAREN);
+            consume(TokenType.SEMICOLON); // Consume the ending semicolon of `do-while`
     
             return new DoWhileNode(condition, body);
         } else {

@@ -149,6 +149,23 @@ public class Executor {
             context.setVariableValue(fieldAssign.getObjectName() + "." + fieldAssign.getFieldName(), value);
             logger.info("Field '" + fieldAssign.getObjectName() + "." + fieldAssign.getFieldName() + "' set to: " + value);
         }
+        else if (statement instanceof DoWhileNode) {
+            DoWhileNode doWhileNode = (DoWhileNode) statement;
+        
+            logger.info("Executing DoWhileNode");
+        
+            do {
+                for (ASTNode bodyStatement : doWhileNode.getBody()) {
+                    executeStatement(bodyStatement, context, outputs); // Add an empty list or appropriate argument
+                    // Check if execution should pause (e.g., waiting for input)
+                    if (context.isWaitingForInput()) {
+                        return;
+                    }
+                }
+            } while (Boolean.TRUE.equals(doWhileNode.getCondition().evaluate(context)));
+        
+            logger.info("DoWhileNode execution completed.");
+        }        
         else if (statement instanceof ReadNode) {
             ReadNode read = (ReadNode) statement;
             String varName = read.getVariableName();

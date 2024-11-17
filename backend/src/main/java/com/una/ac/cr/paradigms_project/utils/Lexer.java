@@ -145,9 +145,16 @@ public class Lexer {
             // Handle operators and symbols
             switch(currentChar){
                 case '=':
-                    tokens.add(new Token(TokenType.ASSIGN, "="));
                     advance();
-                    break;
+                    if (currentChar == '=') {
+                        // If the next character is also '=', it's the equality operator
+                        tokens.add(new Token(TokenType.EQUALS, "=="));
+                        advance();
+                    } else {
+                        // Otherwise, it's the assignment operator
+                        tokens.add(new Token(TokenType.ASSIGN, "="));
+                    }
+                    break;            
                 case ';':
                     tokens.add(new Token(TokenType.SEMICOLON, ";"));
                     advance();

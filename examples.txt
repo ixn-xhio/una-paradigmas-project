@@ -11,13 +11,17 @@ public class Point {
     int x = 10; 
     float y = 20.0; 
     Array<int> ax = [0, 1, 2, 3];
+    bool b = false;
 }; 
 
 Point obj = new Point(); 
 obj.x = 5; 
+print(obj.b);
+obj.b = true; 
 
 read(obj.y); 
 print(obj.x); 
+print(obj.b);
 print(sum(obj.x, obj.y)); 
 print('hola' + 'como esta');
 
@@ -29,3 +33,14 @@ for (0 -> 5, += 1) {
 for (i : obj.ax) {
     print(i);
 }
+
+do {
+    obj.x = obj.x + 1;
+    print(obj.x);
+    print('ciclo desde dentro');
+    if(obj.x > 10) {
+        print('termina ciclo ');
+        obj.b = false;
+        print(false);
+    }
+} while (obj.b == true);

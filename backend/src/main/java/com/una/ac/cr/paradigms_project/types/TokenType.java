@@ -34,6 +34,7 @@ public enum TokenType {
     LEFT_ARROW,
     TRUE,
     FALSE,
+    EQUALS,
     INCREMENT_OPERATOR,
     DECREMENT_OPERATOR,
     FOR,

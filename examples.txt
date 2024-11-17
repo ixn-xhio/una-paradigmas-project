@@ -1,16 +1,16 @@
 function sum(a: int, b: int) { 
     if(a > b) {
-    return a - b; 
+        return a * b; 
     } else if (a < b) {
-    return a + b; 
-    } else {
-    return 'hola';
-    }
-} 
+        return a + b; 
+    } 
+    return 'hola mis amigos';
+}
 
 public class Point { 
     int x = 10; 
     float y = 20.0; 
+    Array<int> ax = [0, 1, 2, 3];
 }; 
 
 Point obj = new Point(); 
@@ -20,3 +20,12 @@ read(obj.y);
 print(obj.x); 
 print(sum(obj.x, obj.y)); 
 print('hola' + 'como esta');
+
+for (0 -> 5, += 1) {
+    print('hola');
+    print('vamos');
+}
+
+for (i : obj.ax) {
+    print(i);
+}

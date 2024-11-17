@@ -30,6 +30,7 @@ com/una/ac/cr/paradigms_project/types/ast/DoWhileNode.class
 com/una/ac/cr/paradigms_project/types/ast/AssignmentNode.class
 com/una/ac/cr/paradigms_project/types/ast/ForEachNode.class
 com/una/ac/cr/paradigms_project/types/ast/ForRangeNode.class
+com/una/ac/cr/paradigms_project/types/ast/ArrayVariableDeclarationNode.class
 com/una/ac/cr/paradigms_project/types/ast/PrintNode.class
 com/una/ac/cr/paradigms_project/types/ast/ReadNode.class
 com/una/ac/cr/paradigms_project/types/ast/LiteralNode.class
@@ -38,4 +39,5 @@ com/una/ac/cr/paradigms_project/types/ast/ObjectFieldAssignmentNode.class
 com/una/ac/cr/paradigms_project/config/WebConfig.class
 com/una/ac/cr/paradigms_project/service/ExecutorService.class
 com/una/ac/cr/paradigms_project/types/ast/WhileNode.class
+com/una/ac/cr/paradigms_project/types/ast/ArrayLiteralNode.class
 com/una/ac/cr/paradigms_project/types/ast/ASTNode.class

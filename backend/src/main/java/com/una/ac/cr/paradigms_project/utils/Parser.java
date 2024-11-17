@@ -119,31 +119,26 @@ public class Parser {
         throw new RuntimeException("Invalid field declaration");
     }
 
-    private ASTNode variableDeclaration() {
-        String type = consume(currentToken.getType()).getValue();  // Consume the typy
-        if (currentToken.getType() == TokenType.LBRACKET) {  // Check for array declaration
-            consume(TokenType.LBRACKET);
-            consume(TokenType.RBRACKET);
-            type = "Array<" + type + ">";  // Define it as an array of the specific type
-        }
-    
+    private ASTNode variableDeclaration(){
+        String type = consume(currentToken.getType()).getValue(); // Consumir el tipo actual
         String varName = consume(TokenType.IDENTIFIER).getValue();
         consume(TokenType.ASSIGN);
         ExpressionNode expr = expression();
         consume(TokenType.SEMICOLON);
-    
-        // Handling arrays specifically in variable declarations
-        if (type.startsWith("Array<")) {
-            if (!(expr instanceof ArrayLiteralNode)) {
-                throw new RuntimeException("Expected array literal expression for array type " + type);
+        
+        if(isClassType(type)){
+            if(!(expr instanceof ObjectInstantiationExpressionNode)){
+                throw new RuntimeException("Expected object instantiation expression for type " + type);
             }
-            ArrayLiteralNode arrayExpr = (ArrayLiteralNode) expr;
-            return new ArrayVariableDeclarationNode(varName, type, arrayExpr);
+            ObjectInstantiationExpressionNode objExpr = (ObjectInstantiationExpressionNode) expr;
+            if(!objExpr.getClassName().equals(type)){
+                throw new RuntimeException("Mismatched class name in object instantiation");
+            }
+            return new ObjectInstantiationNode(varName, type);
+        } else {
+            return new VariableDeclarationNode(varName, expr);
         }
-    
-        return new VariableDeclarationNode(varName, expr);
-    }
-      
+    }    
 
     private ASTNode assignment(){
         String varName = consume(TokenType.IDENTIFIER).getValue();

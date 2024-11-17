@@ -43,5 +43,7 @@ public enum TokenType {
     ARRAY_TYPE,  
     LBRACKET,    
     RBRACKET,    
-    ARRAY_LITERAL    
+    ARRAY_LITERAL,
+    ARRAY_START,
+    ARRAY_END
 }

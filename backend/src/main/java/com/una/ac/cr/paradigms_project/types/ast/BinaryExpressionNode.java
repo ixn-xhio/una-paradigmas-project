@@ -41,7 +41,11 @@ public class BinaryExpressionNode extends ExpressionNode {
                 case "*":
                     return l * r;
                 case "/":
-                    return l / r;
+                    if(r != 0){
+                        return l / r;
+                    } else {
+                        return "ArithmeticError. You cannot / by zero";
+                    }
                 case ">":
                     return l > r;
                 case "<":

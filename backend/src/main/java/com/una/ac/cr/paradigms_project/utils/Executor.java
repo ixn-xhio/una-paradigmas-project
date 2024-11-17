@@ -129,16 +129,46 @@ public class Executor {
         else if (statement instanceof IfNode) {
             IfNode ifNode = (IfNode) statement;
             boolean condition = (boolean) ifNode.getCondition().evaluate(context);
-        
+            
             logger.info("IfNode condition evaluated to: " + condition);
-        
-            List<ASTNode> branchToExecute = condition ? ifNode.getTrueBranch() : ifNode.getFalseBranch();
-        
-            for (ASTNode branchStatement : branchToExecute) {
-                executeStatement(branchStatement, context, outputs);
+            
+            // First, check if the 'if' condition is true
+            if (condition) {
+                // Execute the trueBranch
+                for (ASTNode branchStatement : ifNode.getTrueBranch()) {
+                    executeStatement(branchStatement, context, outputs);
+                    if (context.isWaitingForInput()) {
+                        return;  // Stop execution if waiting for input
+                    }
+                }
+            } else {
+                // Check for else-if branches (evaluate in order)
+                boolean elseIfExecuted = false;
+                for (IfNode elseIfNode : ifNode.getElseIfBranches()) {
+                    boolean elseIfCondition = (boolean) elseIfNode.getCondition().evaluate(context);
+                    logger.info("ElseIfNode condition evaluated to: " + elseIfCondition);
+                    
+                    if (elseIfCondition) {
+                        // Execute the trueBranch of the first matching else-if
+                        for (ASTNode branchStatement : elseIfNode.getTrueBranch()) {
+                            executeStatement(branchStatement, context, outputs);
+                            if (context.isWaitingForInput()) {
+                                return;  // Stop execution if waiting for input
+                            }
+                        }
+                        elseIfExecuted = true;
+                        break;  // Only execute the first else-if that is true
+                    }
+                }
                 
-                if (context.isWaitingForInput()) {
-                    return;
+                // If no else-if was executed, execute the falseBranch
+                if (!elseIfExecuted && ifNode.getFalseBranch() != null) {
+                    for (ASTNode branchStatement : ifNode.getFalseBranch()) {
+                        executeStatement(branchStatement, context, outputs);
+                        if (context.isWaitingForInput()) {
+                            return;  // Stop execution if waiting for input
+                        }
+                    }
                 }
             }
         } else if (statement instanceof ForRangeNode) {

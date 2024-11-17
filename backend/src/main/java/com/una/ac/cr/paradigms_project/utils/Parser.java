@@ -1,3 +1,4 @@
+//This file serialize the Expressions for the AST from the tokens created in the Lexer file
 package com.una.ac.cr.paradigms_project.utils;
 
 import com.una.ac.cr.paradigms_project.types.Token;
@@ -118,26 +119,31 @@ public class Parser {
         throw new RuntimeException("Invalid field declaration");
     }
 
-    private ASTNode variableDeclaration(){
-        String type = consume(currentToken.getType()).getValue(); // Consumir el tipo actual
+    private ASTNode variableDeclaration() {
+        String type = consume(currentToken.getType()).getValue();  // Consume the typy
+        if (currentToken.getType() == TokenType.LBRACKET) {  // Check for array declaration
+            consume(TokenType.LBRACKET);
+            consume(TokenType.RBRACKET);
+            type = "Array<" + type + ">";  // Define it as an array of the specific type
+        }
+    
         String varName = consume(TokenType.IDENTIFIER).getValue();
         consume(TokenType.ASSIGN);
         ExpressionNode expr = expression();
         consume(TokenType.SEMICOLON);
-        
-        if(isClassType(type)){
-            if(!(expr instanceof ObjectInstantiationExpressionNode)){
-                throw new RuntimeException("Expected object instantiation expression for type " + type);
+    
+        // Handling arrays specifically in variable declarations
+        if (type.startsWith("Array<")) {
+            if (!(expr instanceof ArrayLiteralNode)) {
+                throw new RuntimeException("Expected array literal expression for array type " + type);
             }
-            ObjectInstantiationExpressionNode objExpr = (ObjectInstantiationExpressionNode) expr;
-            if(!objExpr.getClassName().equals(type)){
-                throw new RuntimeException("Mismatched class name in object instantiation");
-            }
-            return new ObjectInstantiationNode(varName, type);
-        } else {
-            return new VariableDeclarationNode(varName, expr);
+            ArrayLiteralNode arrayExpr = (ArrayLiteralNode) expr;
+            return new ArrayVariableDeclarationNode(varName, type, arrayExpr);
         }
-    }    
+    
+        return new VariableDeclarationNode(varName, expr);
+    }
+      
 
     private ASTNode assignment(){
         String varName = consume(TokenType.IDENTIFIER).getValue();
@@ -312,50 +318,70 @@ public class Parser {
         return new IfNode(condition, ifBody, elseIfBranches, null);
     }     
     
-    private ExpressionNode primaryExpression(){
+    private ExpressionNode primaryExpression() {
         Token token = currentToken;
-        if(token.getType() == TokenType.NEW){
+        
+        if (token.getType() == TokenType.NEW) {
             consume(TokenType.NEW);
             String className = consume(TokenType.IDENTIFIER).getValue();
             consume(TokenType.LPAREN);
             consume(TokenType.RPAREN);
             return new ObjectInstantiationExpressionNode(className);
         }
-        if(token.getType() == TokenType.NUMBER){
+    
+        if (token.getType() == TokenType.NUMBER) {
             consume(TokenType.NUMBER);
-            if(token.getValue().contains(".")){
+            if (token.getValue().contains(".")) {
                 return new LiteralNode(Float.parseFloat(token.getValue()));
             } else {
                 return new LiteralNode(Integer.parseInt(token.getValue()));
             }
         }
-        if(token.getType() == TokenType.STRING){
+    
+        if (token.getType() == TokenType.STRING) {
             consume(TokenType.STRING);
             String value = new String();
-            while(currentToken.getType() == TokenType.IDENTIFIER){
+            while (currentToken.getType() == TokenType.IDENTIFIER) {
                 String appendingValue = consume(TokenType.IDENTIFIER).getValue();
                 value += " " + appendingValue;
             }
             consume(TokenType.STRING);
             return new LiteralNode(value);
         }
-        if(token.getType() == TokenType.IDENTIFIER){
+    
+        if (token.getType() == TokenType.IDENTIFIER) {
             String varName = consume(TokenType.IDENTIFIER).getValue();
-            if(currentToken.getType() == TokenType.DOT){
+            
+            if (currentToken.getType() == TokenType.DOT) {
                 consume(TokenType.DOT);
                 String fieldName = consume(TokenType.IDENTIFIER).getValue();
                 return new VariableReferenceNode(varName + "." + fieldName);
             }
-            if(currentToken.getType() == TokenType.LPAREN){
+    
+            if (currentToken.getType() == TokenType.LPAREN) {
                 consume(TokenType.LPAREN);
                 List<ExpressionNode> args = argumentList();
                 consume(TokenType.RPAREN);
                 return new FunctionCallExpressionNode(varName, args);
             }
+    
             return new VariableReferenceNode(varName);
         }
+        
+        if (token.getType() == TokenType.LBRACKET) {  // This handles the array literals
+            consume(TokenType.LBRACKET);
+            List<ExpressionNode> elements = new ArrayList<>();
+            elements.add(expression());
+            while (currentToken.getType() == TokenType.COMMA) {
+                consume(TokenType.COMMA);
+                elements.add(expression());
+            }
+            consume(TokenType.RBRACKET);
+            return new ArrayLiteralNode(elements);  // Create an ArrayLiteralNode for array expression
+        }
+    
         throw new RuntimeException("Unexpected token in expression: " + token.getValue());
-    }
+    }    
 
     private ASTNode forStatement() {
         consume(TokenType.FOR); 

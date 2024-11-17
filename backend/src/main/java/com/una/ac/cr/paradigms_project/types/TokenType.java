@@ -39,5 +39,9 @@ public enum TokenType {
     ELSE,
     LESS,
     GREATER,
-    EOF
+    EOF,
+    ARRAY_TYPE,  
+    LBRACKET,    
+    RBRACKET,    
+    ARRAY_LITERAL    
 }

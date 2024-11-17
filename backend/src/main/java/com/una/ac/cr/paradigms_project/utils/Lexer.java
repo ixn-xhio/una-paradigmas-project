@@ -11,112 +11,106 @@ public class Lexer {
     private int pos;
     private char currentChar;
 
-    public Lexer(String input){
+    public Lexer(String input) {
         this.input = input;
         this.pos = 0;
         this.currentChar = input.length() > 0 ? input.charAt(0) : '\0';
     }
 
-    private void advance(){
+    private void advance() {
         pos++;
-        if(pos >= input.length()){
+        if (pos >= input.length()) {
             currentChar = '\0';
         } else {
             currentChar = input.charAt(pos);
         }
     }
 
-    private void skipWhitespace(){
-        while(currentChar != '\0' && Character.isWhitespace(currentChar)){
+    private void skipWhitespace() {
+        while (currentChar != '\0' && Character.isWhitespace(currentChar)) {
             advance();
         }
     }
 
-    private String identifier(){
+    private String identifier() {
         StringBuilder result = new StringBuilder();
-        while(currentChar != '\0' && (Character.isLetterOrDigit(currentChar) || currentChar == '_')){
+        while (currentChar != '\0' && (Character.isLetterOrDigit(currentChar) || currentChar == '_')) {
             result.append(currentChar);
             advance();
         }
         return result.toString();
     }
 
-    private String number(){
+    private String number() {
         StringBuilder result = new StringBuilder();
-        while(currentChar != '\0' && (Character.isDigit(currentChar) || currentChar == '.')){
+        while (currentChar != '\0' && (Character.isDigit(currentChar) || currentChar == '.')) {
             result.append(currentChar);
             advance();
         }
         return result.toString();
     }
 
-    public List<Token> tokenize(){
+    public List<Token> tokenize() {
         List<Token> tokens = new ArrayList<>();
-        while(currentChar != '\0'){
-            if(Character.isWhitespace(currentChar)){
+        while (currentChar != '\0') {
+            if (Character.isWhitespace(currentChar)) {
                 skipWhitespace();
                 continue;
             }
-            if(Character.isLetter(currentChar)){
-                String id = identifier();
-                switch(id){
-                    case "function":
-                        tokens.add(new Token(TokenType.FUNCTION, id));
-                        break;
-                    case "public":
-                        tokens.add(new Token(TokenType.PUBLIC, id));
-                        break;
-                    case "class":
-                        tokens.add(new Token(TokenType.CLASS, id));
-                        break;
-                    case "int":
-                        tokens.add(new Token(TokenType.INT, id));
-                        break;
-                    case "float":
-                        tokens.add(new Token(TokenType.FLOAT, id));
-                        break;
-                    case "integer": // Added case for 'integer'
-                        tokens.add(new Token(TokenType.INTEGER, id));
-                        break;
-                    case "read":
-                        tokens.add(new Token(TokenType.READ, id));
-                        break;
-                    case "print":
-                        tokens.add(new Token(TokenType.PRINT, id));
-                        break;
-                    case "new":
-                        tokens.add(new Token(TokenType.NEW, id));
-                        break;
-                    case "return":
-                        tokens.add(new Token(TokenType.RETURN, id));
-                        break;
-                    case "if":
-                        tokens.add(new Token(TokenType.IF, id));
-                        break;
-                    case "else":
-                        tokens.add(new Token(TokenType.ELSE, id));
-                        break;
-                    case "do":
-                        tokens.add(new Token(TokenType.DO, id));
-                        break;
-                    case "while":
-                        tokens.add(new Token(TokenType.WHILE, id));
-                        break;
-                    case "for":
-                        tokens.add(new Token(TokenType.FOR, id));
-                        break;
-                    default:
-                        tokens.add(new Token(TokenType.IDENTIFIER, id));
-                        break;
+
+            // Handling for Array types (e.g., "Array<Class>")
+            if (currentChar == 'A' && peekNextChars(5).equals("rray<")) {
+                advance(); // 'A'
+                advance(); // 'r'
+                advance(); // 'r'
+                advance(); // 'y'
+                advance(); // '<'
+                String className = identifier();
+                tokens.add(new Token(TokenType.ARRAY_TYPE, "Array<" + className + ">"));
+                advance(); // '>'
+                continue;
+            }
+
+            // Handling for array literals like ["hola", "pepe"]
+            if (currentChar == '[') {
+                tokens.add(new Token(TokenType.LBRACKET, "["));
+                advance();
+                // Tokenize elements within the array literal
+                while (currentChar != '\0' && currentChar != ']') {
+                    if (currentChar == ',') {
+                        tokens.add(new Token(TokenType.COMMA, ","));
+                        advance();
+                    } else if (currentChar == '\'') {  // Assuming string literals are enclosed in single quotes
+                        tokens.add(new Token(TokenType.STRING, String.valueOf(currentChar)));
+                        advance();
+                    } else if (Character.isLetterOrDigit(currentChar)) {
+                        String element = identifier();
+                        tokens.add(new Token(TokenType.ARRAY_LITERAL, element));
+                    } else {
+                        throw new RuntimeException("Unexpected character in array literal: " + currentChar);
+                    }
+                }
+                if (currentChar == ']') {
+                    tokens.add(new Token(TokenType.RBRACKET, "]"));
+                    advance();
                 }
                 continue;
             }
-            if(Character.isDigit(currentChar)){
+
+            // Handle normal identifiers, numbers, and other symbols
+            if (Character.isLetter(currentChar)) {
+                String id = identifier();
+                tokens.add(new Token(TokenType.IDENTIFIER, id));
+                continue;
+            }
+
+            if (Character.isDigit(currentChar)) {
                 String num = number();
                 tokens.add(new Token(TokenType.NUMBER, num));
                 continue;
             }
-            switch(currentChar){
+
+            switch (currentChar) {
                 case '=':
                     tokens.add(new Token(TokenType.ASSIGN, "="));
                     advance();
@@ -145,60 +139,23 @@ public class Lexer {
                     tokens.add(new Token(TokenType.RBRACE, "}"));
                     advance();
                     break;
-                case ':':
-                    tokens.add(new Token(TokenType.COLON, ":"));
-                    advance();
-                    break;
-                case '.':
-                    tokens.add(new Token(TokenType.DOT, "."));
-                    advance();
-                    break;
-                case '+':  
-                    advance();
-                    if(currentChar == '='){ // Check for '+='
-                        tokens.add(new Token(TokenType.INCREMENT_OPERATOR, "+="));
-                        advance();
-                    } else { // Just a single '+'
-                        tokens.add(new Token(TokenType.PLUS, "+"));
-                    }
-                    break;
-                case '-':
-                    advance();
-                    if(currentChar == '='){ // Check for '-='
-                        tokens.add(new Token(TokenType.DECREMENT_OPERATOR, "-="));
-                        advance();
-                    } else if(currentChar == '>'){
-                        tokens.add(new Token(TokenType.LEFT_ARROW, "->"));
-                        advance();
-                    } else { 
-                        tokens.add(new Token(TokenType.MINUS, "-"));
-                    }
-                    break;
-                case '*':
-                    tokens.add(new Token(TokenType.MULTIPLY, "*"));
-                    advance();
-                    break;
-                case '/':
-                    tokens.add(new Token(TokenType.DIVIDE, "/"));
-                    advance();
-                    break;
-                case '\'':
-                    tokens.add(new Token(TokenType.STRING, "'"));
-                    advance();
-                    break;
-                case '>':
-                    tokens.add(new Token(TokenType.GREATER, ">"));
-                    advance();
-                    break;
-                case '<':
-                    tokens.add(new Token(TokenType.LESS, "<"));
-                    advance();
-                    break;
                 default:
                     throw new RuntimeException("Unknown character: " + currentChar);
             }
         }
         tokens.add(new Token(TokenType.EOF, ""));
         return tokens;
+    }
+
+    private String peekNextChars(int length) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            if (pos + i < input.length()) {
+                sb.append(input.charAt(pos + i));
+            } else {
+                break;
+            }
+        }
+        return sb.toString();
     }
 }

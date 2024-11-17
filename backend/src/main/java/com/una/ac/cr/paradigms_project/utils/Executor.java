@@ -86,14 +86,64 @@ public class Executor {
             Object value = varDecl.getExpression().evaluate(context);
             context.setVariable(varDecl.getVarName(), value);
             logger.info("Variable '" + varDecl.getVarName() + "' set to: " + value);
-        }
-        else if (statement instanceof ObjectInstantiationNode) {
-            ObjectInstantiationNode objInst = (ObjectInstantiationNode) statement;
-            // Instantiate a new object as a HashMap
-            context.setVariable(objInst.getVariableName(), new HashMap<String, Object>());
-            logger.info("Object '" + objInst.getVariableName() + "' instantiated.");
-        }
-        else if (statement instanceof ObjectFieldAssignmentNode) {
+        } if (statement instanceof ObjectInstantiationNode) {
+            ObjectInstantiationNode instantiationNode = (ObjectInstantiationNode) statement;
+            String className = instantiationNode.getClassName();
+            String instanceName = instantiationNode.getVariableName();
+        
+            ClassDef classDef = context.getClass(className);
+            if (classDef == null) {
+                throw new RuntimeException("Class not found: " + className);
+            }
+        
+            // Create the instance and populate fields
+            Map<String, Object> instance = new HashMap<>();
+            for (Map.Entry<String, Object> entry : classDef.getFields().entrySet()) {
+                String fieldName = entry.getKey();
+                Object fieldValue = entry.getValue();
+        
+                if (fieldValue instanceof List<?>) {
+                    List<?> fieldList = (List<?>) fieldValue;
+        
+                    // Handle array or list fields by collecting all elements
+                    List<Object> collectedValues = new ArrayList<>();
+                    for (Object fieldItem : fieldList) {
+                        if (fieldItem instanceof FieldNode) {
+                            FieldNode fieldNode = (FieldNode) fieldItem;
+        
+                            Object defaultValue = fieldNode.getExpression() != null
+                                ? fieldNode.getExpression().evaluate(context)
+                                : getDefaultFieldValue(fieldNode.getType());
+        
+                            collectedValues.add(defaultValue);
+                        } else if (fieldItem instanceof Integer || fieldItem instanceof Float || fieldItem instanceof String) {
+                            collectedValues.add(fieldItem);
+                        } else {
+                            throw new RuntimeException("Unexpected item in field list: " + fieldItem.getClass().getName());
+                        }
+                    }
+        
+                    // Store the entire list as a field value
+                    instance.put(fieldName, collectedValues);
+                } else if (fieldValue instanceof FieldNode) {
+                    FieldNode fieldNode = (FieldNode) fieldValue;
+        
+                    Object defaultValue = fieldNode.getExpression() != null
+                        ? fieldNode.getExpression().evaluate(context)
+                        : getDefaultFieldValue(fieldNode.getType());
+        
+                    instance.put(fieldNode.getName(), defaultValue);
+                } else if (fieldValue instanceof Integer || fieldValue instanceof Float || fieldValue instanceof String) {
+                    // Direct Integer, Float, or String field handling
+                    instance.put(fieldName, fieldValue);
+                } else {
+                    throw new RuntimeException("Unexpected field type in class definition: " + fieldValue.getClass().getName());
+                }
+            }
+        
+            context.setVariable(instanceName, instance);
+            System.out.println("Instance created: " + instanceName + " with fields " + instance);
+        } else if (statement instanceof ObjectFieldAssignmentNode) {
             ObjectFieldAssignmentNode fieldAssign = (ObjectFieldAssignmentNode) statement;
             Object value = fieldAssign.getExpression().evaluate(context);
             context.setVariableValue(fieldAssign.getObjectName() + "." + fieldAssign.getFieldName(), value);
@@ -197,6 +247,42 @@ public class Executor {
             logger.info("Start of cicle: " + start);
             logger.info("End of cicle " + end);
             logger.info("Iterative value: " + increment);
+            
+        } else if (statement instanceof ForArrayNode) {
+            ForArrayNode forArrayNode = (ForArrayNode) statement;
+            List<ASTNode> bodyToExecute = forArrayNode.getBody();
+            String indexVar = forArrayNode.getIndexVar();
+            ExpressionNode arrayExpr = forArrayNode.getArrayExpr();
+        
+            // Evaluate the array expression (e.g., obj.ax)
+            Object arrayObj = arrayExpr.evaluate(context);
+        
+            // Ensure the result is a List or Array
+            if (arrayObj instanceof List) {
+                List<?> list = (List<?>) arrayObj;
+                for (int i = 0; i < list.size(); i++) {
+                    context.setVariable(indexVar, list.get(i));
+                    for (ASTNode branchStatement : bodyToExecute) {
+                        executeStatement(branchStatement, context, outputs);
+                        if (context.isWaitingForInput()) {
+                            return;
+                        }
+                    }
+                }
+            } else if (arrayObj instanceof Object[]) {
+                Object[] array = (Object[]) arrayObj;
+                for (int i = 0; i < array.length; i++) {
+                    context.setVariable(indexVar, array[i]);
+                    for (ASTNode branchStatement : bodyToExecute) {
+                        executeStatement(branchStatement, context, outputs);
+                        if (context.isWaitingForInput()) {
+                            return;
+                        }
+                    }
+                }
+            } else {
+                throw new RuntimeException("Expected an array or list for the for-each loop, but got: " + arrayObj);
+            }
         } else {
             String errorMsg = "Unknown statement type: " + statementType;
             logger.severe(errorMsg);
@@ -351,4 +437,18 @@ public class Executor {
             throw new RuntimeException("Invalid input format.");
         }
     }
+
+    private Object getDefaultFieldValue(String type) {
+        switch (type) {
+            case "int":
+                return 0;
+            case "float":
+                return 0.0f;
+            case "boolean":
+                return false;
+            default:
+                return null; // Default for objects
+        }
+    }
+    
 }

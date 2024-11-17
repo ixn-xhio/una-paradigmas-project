@@ -22,10 +22,12 @@ com/una/ac/cr/paradigms_project/types/ast/VariableReferenceNode.class
 com/una/ac/cr/paradigms_project/types/Token.class
 com/una/ac/cr/paradigms_project/types/ast/ReturnNode.class
 com/una/ac/cr/paradigms_project/model/CodeRequest.class
+com/una/ac/cr/paradigms_project/types/ast/GenericArrayExpressionNode.class
 com/una/ac/cr/paradigms_project/utils/ExecutorState.class
 com/una/ac/cr/paradigms_project/Application.class
 com/una/ac/cr/paradigms_project/model/InputRequest.class
 com/una/ac/cr/paradigms_project/utils/ReturnException.class
+com/una/ac/cr/paradigms_project/types/ast/ForArrayNode.class
 com/una/ac/cr/paradigms_project/types/ast/DoWhileNode.class
 com/una/ac/cr/paradigms_project/types/ast/AssignmentNode.class
 com/una/ac/cr/paradigms_project/types/ast/ForEachNode.class

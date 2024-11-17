@@ -7,6 +7,7 @@ import com.una.ac.cr.paradigms_project.types.ast.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.lang.reflect.Field;
 
 public class ExecutorContext {
     // Variables stored in the current context
@@ -72,20 +73,36 @@ public class ExecutorContext {
             variables.put(varName, value);
         }
     }
-
+    
     public Object getVariableValue(String varName) {
-        if(varName.contains(".")) {
+        System.out.println("Resolving variable: " + varName);
+        if (varName.contains(".")) {
             String[] parts = varName.split("\\.");
-            Object obj = variables.get(parts[0]);
-            if(obj instanceof Map) {
-                return ((Map<String, Object>) obj).get(parts[1]);
-            } else {
-                throw new RuntimeException("Variable " + parts[0] + " is not an object.");
+            Object current = variables.get(parts[0]); // Get base variable (e.g., 'obj')
+            if (current == null) {
+                throw new RuntimeException("Base variable not found: " + parts[0]);
             }
+    
+            System.out.println(current);
+            // Traverse the dot notation
+            for (int i = 1; i < parts.length; i++) {
+                String fieldName = parts[i];
+                System.out.println("Accessing field: " + fieldName + " of object: " + current);
+                current = getFieldValue(current, fieldName);
+                System.out.println(current);
+                if (current == null) {
+                    System.out.println(current);
+                    throw new RuntimeException("Field '" + fieldName + "' not found over " + varName);
+                }
+            }
+    
+            return current;
         } else {
             return variables.get(varName);
         }
     }
+    
+        
 
     public boolean isWaitingForInput() {
         return waitingForInputVar != null;
@@ -114,4 +131,19 @@ public class ExecutorContext {
     public ClassDef getClass(String name) {
         return classes.get(name);
     }
+
+    private Object getFieldValue(Object obj, String fieldName) {
+        try {
+            Class<?> clazz = obj.getClass();
+            Field field = clazz.getDeclaredField(fieldName); // Get the field using reflection
+            field.setAccessible(true); // Allow access to private/protected fields
+            return field.get(obj); // Retrieve the field's value
+        } catch (NoSuchFieldException e) {
+            throw new RuntimeException(
+                "Field '" + fieldName + "' not found in class: " + obj.getClass().getName(), e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(
+                "Cannot access field '" + fieldName + "' in class: " + obj.getClass().getName(), e);
+        }
+    }    
 }

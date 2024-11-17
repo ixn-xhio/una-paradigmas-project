@@ -105,19 +105,53 @@ public class Parser {
         definedTypes.add(name); // Add class name to known types
         return classNode;
     }
-
-    private FieldNode fieldDeclaration(){
+    
+    private FieldNode fieldDeclaration() {
         Token typeToken = currentToken;
-        if(typeToken.getType() == TokenType.INT || typeToken.getType() == TokenType.FLOAT || typeToken.getType() == TokenType.INTEGER){
+    
+        // Handle primitive types like int, float, or integer
+        if (typeToken.getType() == TokenType.INT || typeToken.getType() == TokenType.FLOAT || typeToken.getType() == TokenType.INTEGER) {
             consume(typeToken.getType());
-            String name = consume(TokenType.IDENTIFIER).getValue();
-            consume(TokenType.ASSIGN);
-            ExpressionNode expr = expression();
-            consume(TokenType.SEMICOLON);
+            String name = consume(TokenType.IDENTIFIER).getValue(); // Variable name
+            consume(TokenType.ASSIGN); // Consume '='
+            ExpressionNode expr = expression(); // Parse the assigned value
+            consume(TokenType.SEMICOLON); // Consume ';'
             return new FieldNode(typeToken.getValue(), name, expr);
         }
+    
+        // Handle array types like Array<int>
+        if (typeToken.getType() == TokenType.IDENTIFIER && typeToken.getValue().equals("Array")) {
+            consume(TokenType.IDENTIFIER); // Consume 'Array'
+            consume(TokenType.LESS);       // Consume '<'
+    
+            // Accept primitive types (int, float, etc.) or custom identifiers
+            String elementType;
+            if (currentToken.getType() == TokenType.INT || currentToken.getType() == TokenType.FLOAT) {
+                elementType = consume(currentToken.getType()).getValue(); // Handle primitives like int
+            } else if (currentToken.getType() == TokenType.IDENTIFIER) {
+                elementType = consume(TokenType.IDENTIFIER).getValue(); // Handle identifiers like T
+            } else {
+                throw new RuntimeException("Expected primitive type or identifier in generic type, but found: " + currentToken.getType());
+            }
+    
+            consume(TokenType.GREATER);   // Consume '>'
+    
+            String name = consume(TokenType.IDENTIFIER).getValue(); // Variable name
+            consume(TokenType.ASSIGN); // Consume '='
+            ExpressionNode expr = expression(); // Parse the array literal or assignment
+            consume(TokenType.SEMICOLON); // Consume ';'
+            
+            if (expr instanceof ArrayLiteralNode) {
+                ((ArrayLiteralNode) expr).setElementType(elementType);
+            }
+            System.out.println("creating FieldNode " + elementType + " " +expr);
+            return new FieldNode("Array<" + elementType + ">", name, expr);
+        }
+    
         throw new RuntimeException("Invalid field declaration");
     }
+    
+    
 
     private ASTNode variableDeclaration(){
         String type = consume(currentToken.getType()).getValue(); // Consumir el tipo actual
@@ -315,7 +349,7 @@ public class Parser {
     
     private ExpressionNode primaryExpression() {
         Token token = currentToken;
-        
+    
         if (token.getType() == TokenType.NEW) {
             consume(TokenType.NEW);
             String className = consume(TokenType.IDENTIFIER).getValue();
@@ -346,13 +380,15 @@ public class Parser {
     
         if (token.getType() == TokenType.IDENTIFIER) {
             String varName = consume(TokenType.IDENTIFIER).getValue();
-            
+    
+            // Check for dot notation
             if (currentToken.getType() == TokenType.DOT) {
                 consume(TokenType.DOT);
                 String fieldName = consume(TokenType.IDENTIFIER).getValue();
                 return new VariableReferenceNode(varName + "." + fieldName);
             }
     
+            // Check for function calls
             if (currentToken.getType() == TokenType.LPAREN) {
                 consume(TokenType.LPAREN);
                 List<ExpressionNode> args = argumentList();
@@ -362,53 +398,64 @@ public class Parser {
     
             return new VariableReferenceNode(varName);
         }
-        
-        if (token.getType() == TokenType.LBRACKET) {  // This handles the array literals
+    
+        // Check for array literal
+        if (token.getType() == TokenType.LBRACKET) {
             consume(TokenType.LBRACKET);
             List<ExpressionNode> elements = new ArrayList<>();
-            elements.add(expression());
-            while (currentToken.getType() == TokenType.COMMA) {
-                consume(TokenType.COMMA);
+    
+            if (currentToken.getType() != TokenType.RBRACKET) {
                 elements.add(expression());
+                while (currentToken.getType() == TokenType.COMMA) {
+                    consume(TokenType.COMMA);
+                    elements.add(expression());
+                }
             }
+    
             consume(TokenType.RBRACKET);
-            return new ArrayLiteralNode(elements);  // Create an ArrayLiteralNode for array expression
+            return new ArrayLiteralNode(elements);
         }
     
+        // Check for generic array type (e.g., Array<int>)
+        if (token.getType() == TokenType.IDENTIFIER && token.getValue().equals("Array")) {
+            consume(TokenType.IDENTIFIER); // Consume 'Array'
+            consume(TokenType.LESS);       // Consume '<'
+            String elementType = consume(TokenType.IDENTIFIER).getValue(); // Element type (e.g., 'int')
+            consume(TokenType.GREATER);   // Consume '>'
+            consume(TokenType.LPAREN);
+        
+            List<ExpressionNode> elements = new ArrayList<>();
+            if (currentToken.getType() != TokenType.RPAREN) {
+                elements.add(expression());
+                while (currentToken.getType() == TokenType.COMMA) {
+                    consume(TokenType.COMMA);
+                    elements.add(expression());
+                }
+            }
+        
+            consume(TokenType.RPAREN);
+            return new ArrayLiteralNode(elementType, elements); // Use ArrayLiteralNode with type
+        }        
+    
         throw new RuntimeException("Unexpected token in expression: " + token.getValue());
-    }    
+    }
+    
 
     private ASTNode forStatement() {
-        consume(TokenType.FOR); 
-        consume(TokenType.LPAREN); 
+        consume(TokenType.FOR);
+        consume(TokenType.LPAREN);
     
-        // Distinguimos entre las dos variantes de `for`
-        if (currentToken.getType() == TokenType.IDENTIFIER) {
-            Token elementName = currentToken;
-            consume(TokenType.IDENTIFIER); // el nombre de la variable `e`
-            consume(TokenType.OF); // `of` keyword
-            ExpressionNode arrayExpression = expression(); // expresión que evalúa `array`
-            consume(TokenType.RPAREN);
-            consume(TokenType.LBRACE);
-    
-            List<ASTNode> body = new ArrayList<>();
-            while (currentToken.getType() != TokenType.RBRACE) {
-                body.add(statement());
-            }
-            consume(TokenType.RBRACE);
-    
-            return new ForEachNode(elementName, arrayExpression, body);
-        } else {
-            // Parse `for (0 -> 5000, += 1)`
-            ExpressionNode startExpr = expression(); // `0`
-            consume(TokenType.LEFT_ARROW); // `->`
-            ExpressionNode endExpr = expression(); // `5000`
-            consume(TokenType.COMMA); // `,`
+        // Parse range-based for loop (e.g., for (0 -> 5, += 1))
+        if (currentToken.getType() == TokenType.NUMBER) {
+            ExpressionNode startExpr = expression(); // Start index (e.g., 0)
+            consume(TokenType.LEFT_ARROW);          // Consume '->'
+            ExpressionNode endExpr = expression();  // End index (e.g., array.length or 5)
+            consume(TokenType.COMMA);               // Consume ','
             Token incrementOperator = currentToken;
-            consume(TokenType.INCREMENT_OPERATOR); // `+=`
-            ExpressionNode incrementExpr = expression(); // `1`
-            consume(TokenType.RPAREN);
-            consume(TokenType.LBRACE);
+            consume(TokenType.INCREMENT_OPERATOR);  // Consume '+='
+            ExpressionNode incrementExpr = expression(); // Step value (e.g., 1)
+            consume(TokenType.RPAREN);              // Consume ')'
+            consume(TokenType.LBRACE);              // Consume '{'
     
             List<ASTNode> body = new ArrayList<>();
             while (currentToken.getType() != TokenType.RBRACE) {
@@ -418,7 +465,29 @@ public class Parser {
     
             return new ForRangeNode(startExpr, endExpr, incrementOperator, incrementExpr, body);
         }
-    }
+    
+        // Parse array-based for loop (e.g., for (i : array))
+        if (currentToken.getType() == TokenType.IDENTIFIER) {
+            String indexVar = consume(TokenType.IDENTIFIER).getValue(); // Index variable (e.g., i)
+            consume(TokenType.COLON);                                   // Consume ':'
+            ExpressionNode arrayExpr = expression();                   // Array expression (e.g., array)
+            if (arrayExpr == null) {
+                throw new RuntimeException("Failed to parse array expression in for loop");
+            }
+            consume(TokenType.RPAREN);                                 // Consume ')'
+            consume(TokenType.LBRACE);                                 // Consume '{'
+            
+            List<ASTNode> body = new ArrayList<>();
+            while (currentToken.getType() != TokenType.RBRACE) {
+                body.add(statement());
+            }
+            consume(TokenType.RBRACE);
+    
+            return new ForArrayNode(indexVar, arrayExpr, body);
+        }
+    
+        throw new RuntimeException("Invalid for loop syntax");
+    }    
     
     private ASTNode whileStatement() {
         if (currentToken.getType() == TokenType.WHILE) {

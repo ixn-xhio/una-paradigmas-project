@@ -250,6 +250,113 @@ public class Parser {
         return params;
     }
 
+    private ExpressionNode primaryExpression() {
+        Token token = currentToken;
+    
+        // Handle object instantiation
+        if (token.getType() == TokenType.NEW) {
+            consume(TokenType.NEW);
+            String className = consume(TokenType.IDENTIFIER).getValue();
+            consume(TokenType.LPAREN);
+            consume(TokenType.RPAREN);
+            return new ObjectInstantiationExpressionNode(className);
+        }
+    
+        // Handle numbers
+        if (token.getType() == TokenType.NUMBER) {
+            consume(TokenType.NUMBER);
+            if (token.getValue().contains(".")) {
+                return new LiteralNode(Float.parseFloat(token.getValue()));
+            } else {
+                return new LiteralNode(Integer.parseInt(token.getValue()));
+            }
+        }
+    
+        // Handle strings
+        if (token.getType() == TokenType.STRING) {
+            consume(TokenType.STRING); // Consume the opening quote
+            StringBuilder value = new StringBuilder();
+    
+            // Continue parsing until the closing quote is reached
+            while (currentToken.getType() != TokenType.STRING) {
+                value.append(currentToken.getValue()).append(" ");
+                pos++;
+                if (pos < tokens.size()) {
+                    currentToken = tokens.get(pos);
+                } else {
+                    throw new RuntimeException("Unterminated string literal.");
+                }
+            }
+            consume(TokenType.STRING); // Consume the closing quote
+            return new LiteralNode(value.toString().trim());
+        }
+    
+        // Handle identifiers
+        if (token.getType() == TokenType.IDENTIFIER) {
+            String varName = consume(TokenType.IDENTIFIER).getValue();
+    
+            // Check for dot notation
+            if (currentToken.getType() == TokenType.DOT) {
+                consume(TokenType.DOT);
+                String fieldName = consume(TokenType.IDENTIFIER).getValue();
+    
+                // Handle array access after dot notation
+                if (currentToken.getType() == TokenType.LBRACKET) {
+                    consume(TokenType.LBRACKET);
+                    ExpressionNode indexExpr = expression(); // Parse the index expression
+                    consume(TokenType.RBRACKET);
+                    return new ArrayAccessNode(varName + "." + fieldName, indexExpr); // Field-level ArrayAccessNode
+                }
+    
+                return new VariableReferenceNode(varName + "." + fieldName);
+            }
+    
+            // Check for function calls
+            if (currentToken.getType() == TokenType.LPAREN) {
+                consume(TokenType.LPAREN);
+                List<ExpressionNode> args = argumentList();
+                consume(TokenType.RPAREN);
+                return new FunctionCallExpressionNode(varName, args);
+            }
+    
+            // Handle array access directly
+            if (currentToken.getType() == TokenType.LBRACKET) {
+                consume(TokenType.LBRACKET);
+                ExpressionNode indexExpr = expression(); // Parse the index expression
+                consume(TokenType.RBRACKET);
+                return new ArrayAccessNode(varName, indexExpr); // Array-level ArrayAccessNode
+            }
+    
+            return new VariableReferenceNode(varName);
+        }
+    
+        // Handle boolean literals
+        if (token.getType() == TokenType.TRUE || token.getType() == TokenType.FALSE) {
+            consume(token.getType());
+            return new LiteralNode(token.getType() == TokenType.TRUE); // `true` maps to `true`, `false` maps to `false`
+        }
+    
+        // Handle array literals
+        if (token.getType() == TokenType.LBRACKET) {
+            consume(TokenType.LBRACKET);
+            List<ExpressionNode> elements = new ArrayList<>();
+    
+            if (currentToken.getType() != TokenType.RBRACKET) {
+                elements.add(expression());
+                while (currentToken.getType() == TokenType.COMMA) {
+                    consume(TokenType.COMMA);
+                    elements.add(expression());
+                }
+            }
+    
+            consume(TokenType.RBRACKET);
+            return new ArrayLiteralNode(elements);
+        }
+    
+        throw new RuntimeException("Unexpected token in expression: " + token.getValue());
+    }
+    
+
     private ExpressionNode expression() {
         return comparisonExpression();
     }
@@ -351,134 +458,66 @@ public class Parser {
         return new IfNode(condition, ifBody, elseIfBranches, null);
     }     
     
-    private ExpressionNode primaryExpression() {
-        Token token = currentToken;
     
-        if (token.getType() == TokenType.NEW) {
-            consume(TokenType.NEW);
-            String className = consume(TokenType.IDENTIFIER).getValue();
-            consume(TokenType.LPAREN);
-            consume(TokenType.RPAREN);
-            return new ObjectInstantiationExpressionNode(className);
-        }
-    
-        if (token.getType() == TokenType.NUMBER) {
-            consume(TokenType.NUMBER);
-            if (token.getValue().contains(".")) {
-                return new LiteralNode(Float.parseFloat(token.getValue()));
-            } else {
-                return new LiteralNode(Integer.parseInt(token.getValue()));
-            }
-        }
-    
-        if (token.getType() == TokenType.STRING) {
-            consume(TokenType.STRING);
-            String value = new String();
-            while (currentToken.getType() == TokenType.IDENTIFIER) {
-                String appendingValue = consume(TokenType.IDENTIFIER).getValue();
-                value += " " + appendingValue;
-            }
-            consume(TokenType.STRING);
-            return new LiteralNode(value);
-        }
-    
-        if (token.getType() == TokenType.IDENTIFIER) {
-            String varName = consume(TokenType.IDENTIFIER).getValue();
-    
-            // Check for dot notation
-            if (currentToken.getType() == TokenType.DOT) {
-                consume(TokenType.DOT);
-                String fieldName = consume(TokenType.IDENTIFIER).getValue();
-                return new VariableReferenceNode(varName + "." + fieldName);
-            }
-    
-            // Check for function calls
-            if (currentToken.getType() == TokenType.LPAREN) {
-                consume(TokenType.LPAREN);
-                List<ExpressionNode> args = argumentList();
-                consume(TokenType.RPAREN);
-                return new FunctionCallExpressionNode(varName, args);
-            }
-    
-            return new VariableReferenceNode(varName);
-        }
-
-        if (token.getType() == TokenType.TRUE || token.getType() == TokenType.FALSE) {
-            consume(token.getType());
-            return new LiteralNode(token.getType() == TokenType.TRUE); // `true` maps to `true`, `false` maps to `false`
-        }
-
-        // Detect `bool(expression)` syntax
-        if (token.getType() == TokenType.BOOL) {
-            consume(TokenType.BOOL);
-            consume(TokenType.LPAREN); // Consume '('
-            ExpressionNode innerExpression = expression(); // Parse inner expression
-            consume(TokenType.RPAREN); // Consume ')'
-            return new BoolCastExpressionNode(innerExpression); // Return a bool cast node
-        }
-
-        if (token.getType() == TokenType.TRUE || token.getType() == TokenType.FALSE) {
-            consume(token.getType());
-            return new LiteralNode(token.getType() == TokenType.TRUE); // `true` maps to `true`, `false` maps to `false`
-        }        
-
-        // Check for array literal
-        if (token.getType() == TokenType.LBRACKET) {
-            consume(TokenType.LBRACKET);
-            List<ExpressionNode> elements = new ArrayList<>();
-    
-            if (currentToken.getType() != TokenType.RBRACKET) {
-                elements.add(expression());
-                while (currentToken.getType() == TokenType.COMMA) {
-                    consume(TokenType.COMMA);
-                    elements.add(expression());
-                }
-            }
-    
-            consume(TokenType.RBRACKET);
-            return new ArrayLiteralNode(elements);
-        }
-    
-        // Check for generic array type (e.g., Array<int>)
-        if (token.getType() == TokenType.IDENTIFIER && token.getValue().equals("Array")) {
-            consume(TokenType.IDENTIFIER); // Consume 'Array'
-            consume(TokenType.LESS);       // Consume '<'
-            String elementType = consume(TokenType.IDENTIFIER).getValue(); // Element type (e.g., 'int')
-            consume(TokenType.GREATER);   // Consume '>'
-            consume(TokenType.LPAREN);
-        
-            List<ExpressionNode> elements = new ArrayList<>();
-            if (currentToken.getType() != TokenType.RPAREN) {
-                elements.add(expression());
-                while (currentToken.getType() == TokenType.COMMA) {
-                    consume(TokenType.COMMA);
-                    elements.add(expression());
-                }
-            }
-        
-            consume(TokenType.RPAREN);
-            return new ArrayLiteralNode(elementType, elements); // Use ArrayLiteralNode with type
-        }        
-    
-        throw new RuntimeException("Unexpected token in expression: " + token.getValue());
-    }
-    
-
     private ASTNode forStatement() {
         consume(TokenType.FOR);
         consume(TokenType.LPAREN);
     
-        // Parse range-based for loop (e.g., for (0 -> 5, += 1))
+        // Check if the loop starts with an identifier (iterator)
+        if (currentToken.getType() == TokenType.IDENTIFIER) {
+            String iteratorVar = consume(TokenType.IDENTIFIER).getValue(); // Parse iterator variable (e.g., i)
+    
+            // If followed by a colon, treat it as array-based for loop
+            if (currentToken.getType() == TokenType.COLON) {
+                consume(TokenType.COLON);                                   // Consume ':'
+                ExpressionNode arrayExpr = expression();                   // Array expression (e.g., array)
+                consume(TokenType.RPAREN);                                 // Consume ')'
+                consume(TokenType.LBRACE);                                 // Consume '{'
+    
+                List<ASTNode> body = new ArrayList<>();
+                while (currentToken.getType() != TokenType.RBRACE) {
+                    body.add(statement());
+                }
+                consume(TokenType.RBRACE);
+    
+                return new ForArrayNode(iteratorVar, arrayExpr, body);
+            }
+    
+            // If followed by a comma, it's a range-based loop with an iterator
+            if (currentToken.getType() == TokenType.COMMA) {
+                consume(TokenType.COMMA);                                 // Consume ','
+                ExpressionNode startExpr = expression();                  // Start index (e.g., 0)
+                consume(TokenType.LEFT_ARROW);                            // Consume '->'
+                ExpressionNode endExpr = expression();                    // End index (e.g., 5)
+                consume(TokenType.COMMA);                                 // Consume ','
+                Token incrementOperator = currentToken;
+                consume(TokenType.INCREMENT_OPERATOR);                    // Consume '+='
+                ExpressionNode incrementExpr = expression();              // Step value (e.g., 1)
+                System.out.println(incrementExpr);
+                consume(TokenType.RPAREN);                                // Consume ')'
+                consume(TokenType.LBRACE);                                // Consume '{'
+    
+                List<ASTNode> body = new ArrayList<>();
+                while (currentToken.getType() != TokenType.RBRACE) {
+                    body.add(statement());
+                }
+                consume(TokenType.RBRACE);
+    
+                return new ForRangeNodeWithIterator(iteratorVar, startExpr, endExpr, incrementOperator, incrementExpr, body);
+            }
+        }
+    
+        // Parse range-based for loop without an iterator (e.g., for (0 -> 5, += 1))
         if (currentToken.getType() == TokenType.NUMBER) {
-            ExpressionNode startExpr = expression(); // Start index (e.g., 0)
-            consume(TokenType.LEFT_ARROW);          // Consume '->'
-            ExpressionNode endExpr = expression();  // End index (e.g., array.length or 5)
-            consume(TokenType.COMMA);               // Consume ','
+            ExpressionNode startExpr = expression();                     // Start index (e.g., 0)
+            consume(TokenType.LEFT_ARROW);                               // Consume '->'
+            ExpressionNode endExpr = expression();                       // End index (e.g., array.length or 5)
+            consume(TokenType.COMMA);                                    // Consume ','
             Token incrementOperator = currentToken;
-            consume(TokenType.INCREMENT_OPERATOR);  // Consume '+='
-            ExpressionNode incrementExpr = expression(); // Step value (e.g., 1)
-            consume(TokenType.RPAREN);              // Consume ')'
-            consume(TokenType.LBRACE);              // Consume '{'
+            consume(TokenType.INCREMENT_OPERATOR);                       // Consume '+='
+            ExpressionNode incrementExpr = expression();                 // Step value (e.g., 1)
+            consume(TokenType.RPAREN);                                   // Consume ')'
+            consume(TokenType.LBRACE);                                   // Consume '{'
     
             List<ASTNode> body = new ArrayList<>();
             while (currentToken.getType() != TokenType.RBRACE) {
@@ -489,28 +528,10 @@ public class Parser {
             return new ForRangeNode(startExpr, endExpr, incrementOperator, incrementExpr, body);
         }
     
-        // Parse array-based for loop (e.g., for (i : array))
-        if (currentToken.getType() == TokenType.IDENTIFIER) {
-            String indexVar = consume(TokenType.IDENTIFIER).getValue(); // Index variable (e.g., i)
-            consume(TokenType.COLON);                                   // Consume ':'
-            ExpressionNode arrayExpr = expression();                   // Array expression (e.g., array)
-            if (arrayExpr == null) {
-                throw new RuntimeException("Failed to parse array expression in for loop");
-            }
-            consume(TokenType.RPAREN);                                 // Consume ')'
-            consume(TokenType.LBRACE);                                 // Consume '{'
-            
-            List<ASTNode> body = new ArrayList<>();
-            while (currentToken.getType() != TokenType.RBRACE) {
-                body.add(statement());
-            }
-            consume(TokenType.RBRACE);
+        // If the current token is not recognized, throw a descriptive error
+        throw new RuntimeException("Invalid for loop syntax. Expected iterator, range, or array loop, but found: " + currentToken.getType() + " (" + currentToken.getValue() + ")");
+    }
     
-            return new ForArrayNode(indexVar, arrayExpr, body);
-        }
-    
-        throw new RuntimeException("Invalid for loop syntax");
-    }    
     
     private ASTNode whileStatement() {
         if (currentToken.getType() == TokenType.WHILE) {

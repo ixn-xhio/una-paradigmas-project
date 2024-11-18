@@ -88,6 +88,7 @@ public class Executor {
             logger.info("Variable '" + varDecl.getVarName() + "' set to: " + value);
         } if (statement instanceof ObjectInstantiationNode) {
             ObjectInstantiationNode instantiationNode = (ObjectInstantiationNode) statement;
+            
             String className = instantiationNode.getClassName();
             String instanceName = instantiationNode.getVariableName();
         
@@ -127,12 +128,27 @@ public class Executor {
                     instance.put(fieldName, collectedValues);
                 } else if (fieldValue instanceof FieldNode) {
                     FieldNode fieldNode = (FieldNode) fieldValue;
-        
+                
                     Object defaultValue = fieldNode.getExpression() != null
                         ? fieldNode.getExpression().evaluate(context)
                         : getDefaultFieldValue(fieldNode.getType());
-        
-                    instance.put(fieldNode.getName(), defaultValue);
+                
+                    // Special handling for Array types
+                    if (fieldNode.getType().startsWith("Array")) {
+                        List<Object> arrayList = new ArrayList<>();
+                        if (defaultValue instanceof List) {
+                            arrayList.addAll((List<?>) defaultValue);
+                        } else if (defaultValue instanceof ArrayLiteralNode) {
+                            arrayList.addAll(((ArrayLiteralNode) defaultValue).getElements());
+                        } else {
+                            throw new RuntimeException("Expected ArrayLiteralNode or List for field " + fieldNode.getName());
+                        }
+                        instance.put(fieldNode.getName(), arrayList);
+                        System.out.println("Initialized array field: " + fieldNode.getName() + " with value: " + arrayList);
+                    } else {
+                        instance.put(fieldNode.getName(), defaultValue);
+                        System.out.println("Initialized field: " + fieldNode.getName() + " with value: " + defaultValue);
+                    }
                 } else if (fieldValue instanceof Integer || fieldValue instanceof Float || fieldValue instanceof String || fieldValue instanceof Boolean) {
                     // Direct Integer, Float, or String field handling
                     instance.put(fieldName, fieldValue);
@@ -265,6 +281,30 @@ public class Executor {
             logger.info("End of cicle " + end);
             logger.info("Iterative value: " + increment);
             
+        } else if (statement instanceof ForRangeNodeWithIterator) {
+            ForRangeNodeWithIterator forNode = (ForRangeNodeWithIterator) statement;
+            List<ASTNode> bodyToExecute = forNode.getBody();
+        
+            int start = (int) forNode.getStartExpr().evaluate(context); 
+            int end = (int) forNode.getEndExpr().evaluate(context); 
+            int increment = 1;
+            if (forNode.getIncrementExpr() != null) {
+                increment = (int) forNode.getIncrementExpr().evaluate(context); 
+            }
+        
+            String iteratorVar = forNode.getIterator();
+        
+            for (int i = start; i <= end; i += increment) {
+                context.setVariable(iteratorVar, i);
+                
+                System.out.println("ForRangeNodeWithIterator - Iteration: " + i + ", Iterator Variable: " + iteratorVar);
+        
+                for (ASTNode branchStatement : bodyToExecute) {
+                    executeStatement(branchStatement, context, outputs);
+                }
+            }
+        
+            logger.info("Executed ForRangeNodeWithIterator from " + start + " to " + end + " with step " + increment);
         } else if (statement instanceof ForArrayNode) {
             ForArrayNode forArrayNode = (ForArrayNode) statement;
             List<ASTNode> bodyToExecute = forArrayNode.getBody();

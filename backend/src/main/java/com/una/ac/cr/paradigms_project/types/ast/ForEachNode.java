@@ -1,4 +1,3 @@
-// File: src/main/java/com/una/ac/cr/paradigms_project/types/ast/FieldNode.java
 package com.una.ac.cr.paradigms_project.types.ast;
 
 import com.una.ac.cr.paradigms_project.types.Token;

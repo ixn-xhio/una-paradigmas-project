@@ -111,6 +111,13 @@ public class BinaryExpressionNode extends ExpressionNode {
                     throw new RuntimeException("Unknown operator: " + operator + " for Boolean operations");
             }
         }
+        
+        // Handle "+" operator with Strings
+        if (operator.equals("+")) {
+            if (leftVal instanceof String || rightVal instanceof String) {
+                return String.valueOf(leftVal) + String.valueOf(rightVal);
+            }
+        }
 
         throw new RuntimeException("Unsupported operand types for operator " + operator);
     }

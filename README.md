@@ -3,9 +3,10 @@ Ian Picado Achio
 2024 
 Final project programming paradigms
 
-The project can be run by doing
-------> cd frontend folder
+The project can be run by each folder (frontend, backend)
+
+cd frontend
 ----> npm run dev
 
-------> Backend
+cd backend
 ----> mvn spring-boot:run

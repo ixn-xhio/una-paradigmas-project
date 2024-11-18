@@ -1,8 +1,9 @@
 'use client'
  
 import { useEffect, useState } from "react";
-import { DesynthButton, DesynthHeader } from "@desynth/web-components-react/dist/components";
+import { DesynthHeader } from "@desynth/web-components-react/dist/components";
 import { applyPolyfills, defineCustomElements } from "@desynth/web-components/loader";
+import { Button } from "../button/button";
 
 export const Header = ({ onSubmit }: any) => {
   const [loaded, setLoaded] = useState(false);
@@ -23,9 +24,7 @@ export const Header = ({ onSubmit }: any) => {
   return (
     <DesynthHeader id="header">
       <div slot="main">
-        <DesynthButton id="open-drawer-button" onClick={onSubmit}>
-          Run
-        </DesynthButton>
+        <Button id="open-drawer-button" onClick={onSubmit} text="Run"/>
       </div>
     </DesynthHeader>
   );

@@ -32,9 +32,22 @@ public class Lexer {
         }
     }
 
-    private String identifier(){
+    private int stringDelimiterCount = 0;
+
+    private void toggleStringMode() {
+        stringDelimiterCount++;
+    }
+    
+    private boolean isInsideString() {
+        return stringDelimiterCount % 2 != 0;
+    }
+    
+    private String identifier() {
         StringBuilder result = new StringBuilder();
-        while(currentChar != '\0' && (Character.isLetterOrDigit(currentChar) || currentChar == '_')){
+        while (currentChar != '\0' && 
+               (Character.isLetterOrDigit(currentChar) || 
+                currentChar == '_' || 
+                (isInsideString() && Character.isWhitespace(currentChar)))) {
             result.append(currentChar);
             advance();
         }
@@ -218,6 +231,7 @@ public class Lexer {
                     break;
                 case '\'':
                     tokens.add(new Token(TokenType.STRING, "'"));
+                    toggleStringMode();
                     advance();
                     break;
                 case '>':

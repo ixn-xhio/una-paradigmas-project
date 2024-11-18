@@ -1,10 +1,13 @@
 'use client'
-import Image from "next/image";
-import { Header } from './components/shared/header';
+//hooks
 import { useCallback, useEffect, useState } from "react";
+//actions
 import { executeCode, sendInput } from "./actions";
-import { Editor, useMonaco } from "@monaco-editor/react";
+//configs
 import { configuration, languageDef } from "./config";
+//components
+import { Editor, useMonaco } from "@monaco-editor/react";
+import { Header } from './components/shared/header';
 
 export default function Home() {
 
@@ -125,6 +128,7 @@ export default function Home() {
 
 const styles: any = {
   consoleContainer: {
+    borderTop: "1px solid #000000",
     backgroundColor: '#1e1e1e',
     color: '#dcdcdc',
     padding: '10px',

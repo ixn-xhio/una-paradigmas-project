@@ -279,7 +279,7 @@ public class Parser {
     
             // Continue parsing until the closing quote is reached
             while (currentToken.getType() != TokenType.STRING) {
-                value.append(currentToken.getValue()).append(" ");
+                value.append(currentToken.getValue());
                 pos++;
                 if (pos < tokens.size()) {
                     currentToken = tokens.get(pos);
@@ -287,8 +287,9 @@ public class Parser {
                     throw new RuntimeException("Unterminated string literal.");
                 }
             }
+            System.out.println(value.toString());
             consume(TokenType.STRING); // Consume the closing quote
-            return new LiteralNode(value.toString().trim());
+            return new LiteralNode(value.toString());
         }
     
         // Handle identifiers

@@ -1,4 +1,11 @@
 # una-paradigmas-project
-ix Ian Achio
+Ian Picado Achio
 2024 
-Final project paradigms
+Final project programming paradigms
+
+The project can be run by doing
+------> cd frontend folder
+----> npm run dev
+
+------> Backend
+----> mvn spring-boot:run

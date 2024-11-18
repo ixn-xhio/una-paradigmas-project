@@ -112,7 +112,7 @@ public class Parser {
     
         consume(TokenType.RBRACE);
         consume(TokenType.SEMICOLON);
-    
+        definedTypes.add(name); // Add class name to known types
         return classNode;
     }  
       

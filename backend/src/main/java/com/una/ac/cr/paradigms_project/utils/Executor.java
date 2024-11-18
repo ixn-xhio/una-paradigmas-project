@@ -88,21 +88,24 @@ public class Executor {
             logger.info("Variable '" + varDecl.getVarName() + "' set to: " + value);
         } if (statement instanceof ObjectInstantiationNode) {
             ObjectInstantiationNode instantiationNode = (ObjectInstantiationNode) statement;
-            
+        
             String className = instantiationNode.getClassName();
             String instanceName = instantiationNode.getVariableName();
         
+            // Retrieve the class definition from the context
             ClassDef classDef = context.getClass(className);
             if (classDef == null) {
                 throw new RuntimeException("Class not found: " + className);
             }
         
-            // Create the instance and populate fields
+            // Create the instance and initialize fields
             Map<String, Object> instance = new HashMap<>();
-            for (Map.Entry<String, Object> entry : classDef.getFields().entrySet()) {
+            instance.put("__class__", className); // Store class name for method resolution
+        
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) classDef.getFields()).entrySet()) {
                 String fieldName = entry.getKey();
                 Object fieldValue = entry.getValue();
-        
+                
                 if (fieldValue instanceof List<?>) {
                     List<?> fieldList = (List<?>) fieldValue;
         
@@ -128,12 +131,11 @@ public class Executor {
                     instance.put(fieldName, collectedValues);
                 } else if (fieldValue instanceof FieldNode) {
                     FieldNode fieldNode = (FieldNode) fieldValue;
-                
+            
                     Object defaultValue = fieldNode.getExpression() != null
                         ? fieldNode.getExpression().evaluate(context)
                         : getDefaultFieldValue(fieldNode.getType());
-                
-                    // Special handling for Array types
+            
                     if (fieldNode.getType().startsWith("Array")) {
                         List<Object> arrayList = new ArrayList<>();
                         if (defaultValue instanceof List) {
@@ -144,10 +146,8 @@ public class Executor {
                             throw new RuntimeException("Expected ArrayLiteralNode or List for field " + fieldNode.getName());
                         }
                         instance.put(fieldNode.getName(), arrayList);
-                        System.out.println("Initialized array field: " + fieldNode.getName() + " with value: " + arrayList);
                     } else {
                         instance.put(fieldNode.getName(), defaultValue);
-                        System.out.println("Initialized field: " + fieldNode.getName() + " with value: " + defaultValue);
                     }
                 } else if (fieldValue instanceof Integer || fieldValue instanceof Float || fieldValue instanceof String || fieldValue instanceof Boolean) {
                     // Direct Integer, Float, or String field handling
@@ -155,8 +155,9 @@ public class Executor {
                 } else {
                     throw new RuntimeException("Unexpected field type in class definition: " + fieldValue.getClass().getName());
                 }
-            }
+            }            
         
+            // Store the instance in the context
             context.setVariable(instanceName, instance);
             System.out.println("Instance created: " + instanceName + " with fields " + instance);
         } else if (statement instanceof ObjectFieldAssignmentNode) {

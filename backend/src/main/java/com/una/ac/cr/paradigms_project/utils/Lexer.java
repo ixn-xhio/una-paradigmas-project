@@ -32,9 +32,22 @@ public class Lexer {
         }
     }
 
-    private String identifier(){
+    private int stringDelimiterCount = 0;
+
+    private void toggleStringMode() {
+        stringDelimiterCount++;
+    }
+    
+    private boolean isInsideString() {
+        return stringDelimiterCount % 2 != 0;
+    }
+    
+    private String identifier() {
         StringBuilder result = new StringBuilder();
-        while(currentChar != '\0' && (Character.isLetterOrDigit(currentChar) || currentChar == '_')){
+        while (currentChar != '\0' && 
+               (Character.isLetterOrDigit(currentChar) || 
+                currentChar == '_' || 
+                (isInsideString() && Character.isWhitespace(currentChar)))) {
             result.append(currentChar);
             advance();
         }
@@ -57,6 +70,20 @@ public class Lexer {
                 skipWhitespace();
                 continue;
             }
+
+            // Handle array literals (e.g., [1, 2, 3])
+            if (currentChar == '[') {
+                tokens.add(new Token(TokenType.LBRACKET, "["));
+                advance();
+                continue;
+            } 
+            if (currentChar == ']') {
+                tokens.add(new Token(TokenType.RBRACKET, "]"));
+                advance();
+                continue;
+            }
+
+            // Handle identifiers and keywords
             if(Character.isLetter(currentChar)){
                 String id = identifier();
                 switch(id){
@@ -72,11 +99,14 @@ public class Lexer {
                     case "int":
                         tokens.add(new Token(TokenType.INT, id));
                         break;
+                    case "integer": // Added case for 'integer'
+                        tokens.add(new Token(TokenType.INTEGER, id));
+                        break;
                     case "float":
                         tokens.add(new Token(TokenType.FLOAT, id));
                         break;
-                    case "integer": // Added case for 'integer'
-                        tokens.add(new Token(TokenType.INTEGER, id));
+                    case "bool": // Added case for 'integer'
+                        tokens.add(new Token(TokenType.BOOL, id));
                         break;
                     case "read":
                         tokens.add(new Token(TokenType.READ, id));
@@ -90,22 +120,54 @@ public class Lexer {
                     case "return":
                         tokens.add(new Token(TokenType.RETURN, id));
                         break;
+                    case "if":
+                        tokens.add(new Token(TokenType.IF, id));
+                        break;
+                    case "else":
+                        tokens.add(new Token(TokenType.ELSE, id));
+                        break;
+                    case "do":
+                        tokens.add(new Token(TokenType.DO, id));
+                        break;
+                    case "while":
+                        tokens.add(new Token(TokenType.WHILE, id));
+                        break;
+                    case "true":
+                        tokens.add(new Token(TokenType.TRUE, id));
+                        break;
+                    case "false":
+                        tokens.add(new Token(TokenType.FALSE, id));
+                        break;
+                    case "for":
+                        tokens.add(new Token(TokenType.FOR, id));
+                        break;
                     default:
                         tokens.add(new Token(TokenType.IDENTIFIER, id));
                         break;
                 }
                 continue;
             }
+
+            // Handle numbers (e.g., 1, 3.14)
             if(Character.isDigit(currentChar)){
                 String num = number();
                 tokens.add(new Token(TokenType.NUMBER, num));
                 continue;
             }
+
+            // Handle operators and symbols
             switch(currentChar){
                 case '=':
-                    tokens.add(new Token(TokenType.ASSIGN, "="));
                     advance();
-                    break;
+                    if (currentChar == '=') {
+                        // If the next character is also '=', it's the equality operator
+                        tokens.add(new Token(TokenType.EQUALS, "=="));
+                        advance();
+                    } else {
+                        // Otherwise, it's the assignment operator
+                        tokens.add(new Token(TokenType.ASSIGN, "="));
+                    }
+                    break;            
                 case ';':
                     tokens.add(new Token(TokenType.SEMICOLON, ";"));
                     advance();
@@ -138,13 +200,26 @@ public class Lexer {
                     tokens.add(new Token(TokenType.DOT, "."));
                     advance();
                     break;
-                case '+':
-                    tokens.add(new Token(TokenType.PLUS, "+"));
+                case '+':  
                     advance();
+                    if(currentChar == '='){ // Check for '+='
+                        tokens.add(new Token(TokenType.INCREMENT_OPERATOR, "+="));
+                        advance();
+                    } else { // Just a single '+'
+                        tokens.add(new Token(TokenType.PLUS, "+"));
+                    }
                     break;
                 case '-':
-                    tokens.add(new Token(TokenType.MINUS, "-"));
                     advance();
+                    if(currentChar == '='){ // Check for '-='
+                        tokens.add(new Token(TokenType.DECREMENT_OPERATOR, "-="));
+                        advance();
+                    } else if(currentChar == '>'){
+                        tokens.add(new Token(TokenType.LEFT_ARROW, "->"));
+                        advance();
+                    } else { 
+                        tokens.add(new Token(TokenType.MINUS, "-"));
+                    }
                     break;
                 case '*':
                     tokens.add(new Token(TokenType.MULTIPLY, "*"));
@@ -156,6 +231,15 @@ public class Lexer {
                     break;
                 case '\'':
                     tokens.add(new Token(TokenType.STRING, "'"));
+                    toggleStringMode();
+                    advance();
+                    break;
+                case '>':
+                    tokens.add(new Token(TokenType.GREATER, ">"));
+                    advance();
+                    break;
+                case '<':
+                    tokens.add(new Token(TokenType.LESS, "<"));
                     advance();
                     break;
                 default:

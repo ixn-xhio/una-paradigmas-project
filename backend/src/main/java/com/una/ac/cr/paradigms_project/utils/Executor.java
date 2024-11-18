@@ -86,19 +86,102 @@ public class Executor {
             Object value = varDecl.getExpression().evaluate(context);
             context.setVariable(varDecl.getVarName(), value);
             logger.info("Variable '" + varDecl.getVarName() + "' set to: " + value);
-        }
-        else if (statement instanceof ObjectInstantiationNode) {
-            ObjectInstantiationNode objInst = (ObjectInstantiationNode) statement;
-            // Instantiate a new object as a HashMap
-            context.setVariable(objInst.getVariableName(), new HashMap<String, Object>());
-            logger.info("Object '" + objInst.getVariableName() + "' instantiated.");
-        }
-        else if (statement instanceof ObjectFieldAssignmentNode) {
+        } if (statement instanceof ObjectInstantiationNode) {
+            ObjectInstantiationNode instantiationNode = (ObjectInstantiationNode) statement;
+            
+            String className = instantiationNode.getClassName();
+            String instanceName = instantiationNode.getVariableName();
+        
+            ClassDef classDef = context.getClass(className);
+            if (classDef == null) {
+                throw new RuntimeException("Class not found: " + className);
+            }
+        
+            // Create the instance and populate fields
+            Map<String, Object> instance = new HashMap<>();
+            for (Map.Entry<String, Object> entry : classDef.getFields().entrySet()) {
+                String fieldName = entry.getKey();
+                Object fieldValue = entry.getValue();
+        
+                if (fieldValue instanceof List<?>) {
+                    List<?> fieldList = (List<?>) fieldValue;
+        
+                    // Handle array or list fields by collecting all elements
+                    List<Object> collectedValues = new ArrayList<>();
+                    for (Object fieldItem : fieldList) {
+                        if (fieldItem instanceof FieldNode) {
+                            FieldNode fieldNode = (FieldNode) fieldItem;
+        
+                            Object defaultValue = fieldNode.getExpression() != null
+                                ? fieldNode.getExpression().evaluate(context)
+                                : getDefaultFieldValue(fieldNode.getType());
+        
+                            collectedValues.add(defaultValue);
+                        } else if (fieldItem instanceof Integer || fieldItem instanceof Float || fieldItem instanceof String) {
+                            collectedValues.add(fieldItem);
+                        } else {
+                            throw new RuntimeException("Unexpected item in field list: " + fieldItem.getClass().getName());
+                        }
+                    }
+        
+                    // Store the entire list as a field value
+                    instance.put(fieldName, collectedValues);
+                } else if (fieldValue instanceof FieldNode) {
+                    FieldNode fieldNode = (FieldNode) fieldValue;
+                
+                    Object defaultValue = fieldNode.getExpression() != null
+                        ? fieldNode.getExpression().evaluate(context)
+                        : getDefaultFieldValue(fieldNode.getType());
+                
+                    // Special handling for Array types
+                    if (fieldNode.getType().startsWith("Array")) {
+                        List<Object> arrayList = new ArrayList<>();
+                        if (defaultValue instanceof List) {
+                            arrayList.addAll((List<?>) defaultValue);
+                        } else if (defaultValue instanceof ArrayLiteralNode) {
+                            arrayList.addAll(((ArrayLiteralNode) defaultValue).getElements());
+                        } else {
+                            throw new RuntimeException("Expected ArrayLiteralNode or List for field " + fieldNode.getName());
+                        }
+                        instance.put(fieldNode.getName(), arrayList);
+                        System.out.println("Initialized array field: " + fieldNode.getName() + " with value: " + arrayList);
+                    } else {
+                        instance.put(fieldNode.getName(), defaultValue);
+                        System.out.println("Initialized field: " + fieldNode.getName() + " with value: " + defaultValue);
+                    }
+                } else if (fieldValue instanceof Integer || fieldValue instanceof Float || fieldValue instanceof String || fieldValue instanceof Boolean) {
+                    // Direct Integer, Float, or String field handling
+                    instance.put(fieldName, fieldValue);
+                } else {
+                    throw new RuntimeException("Unexpected field type in class definition: " + fieldValue.getClass().getName());
+                }
+            }
+        
+            context.setVariable(instanceName, instance);
+            System.out.println("Instance created: " + instanceName + " with fields " + instance);
+        } else if (statement instanceof ObjectFieldAssignmentNode) {
             ObjectFieldAssignmentNode fieldAssign = (ObjectFieldAssignmentNode) statement;
             Object value = fieldAssign.getExpression().evaluate(context);
             context.setVariableValue(fieldAssign.getObjectName() + "." + fieldAssign.getFieldName(), value);
             logger.info("Field '" + fieldAssign.getObjectName() + "." + fieldAssign.getFieldName() + "' set to: " + value);
         }
+        else if (statement instanceof DoWhileNode) {
+            DoWhileNode doWhileNode = (DoWhileNode) statement;
+        
+            logger.info("Executing DoWhileNode");
+        
+            do {
+                for (ASTNode bodyStatement : doWhileNode.getBody()) {
+                    executeStatement(bodyStatement, context, outputs); // Add an empty list or appropriate argument
+                    // Check if execution should pause (e.g., waiting for input)
+                    if (context.isWaitingForInput()) {
+                        return;
+                    }
+                }
+            } while (Boolean.TRUE.equals(doWhileNode.getCondition().evaluate(context)));
+        
+            logger.info("DoWhileNode execution completed.");
+        }        
         else if (statement instanceof ReadNode) {
             ReadNode read = (ReadNode) statement;
             String varName = read.getVariableName();
@@ -126,7 +209,138 @@ public class Executor {
             Object returnValue = returnNode.getExpression().evaluate(context);
             throw new ReturnException(returnValue);
         }
-        else {
+        else if (statement instanceof IfNode) {
+            IfNode ifNode = (IfNode) statement;
+            boolean condition = (boolean) ifNode.getCondition().evaluate(context);
+            
+            logger.info("IfNode condition evaluated to: " + condition);
+            
+            // First, check if the 'if' condition is true
+            if (condition) {
+                // Execute the trueBranch
+                for (ASTNode branchStatement : ifNode.getTrueBranch()) {
+                    executeStatement(branchStatement, context, outputs);
+                    if (context.isWaitingForInput()) {
+                        return;  // Stop execution if waiting for input
+                    }
+                }
+            } else {
+                // Check for else-if branches (evaluate in order)
+                boolean elseIfExecuted = false;
+                for (IfNode elseIfNode : ifNode.getElseIfBranches()) {
+                    boolean elseIfCondition = (boolean) elseIfNode.getCondition().evaluate(context);
+                    logger.info("ElseIfNode condition evaluated to: " + elseIfCondition);
+                    
+                    if (elseIfCondition) {
+                        // Execute the trueBranch of the first matching else-if
+                        for (ASTNode branchStatement : elseIfNode.getTrueBranch()) {
+                            executeStatement(branchStatement, context, outputs);
+                            if (context.isWaitingForInput()) {
+                                return;  // Stop execution if waiting for input
+                            }
+                        }
+                        elseIfExecuted = true;
+                        break;  // Only execute the first else-if that is true
+                    }
+                }
+                
+                // If no else-if was executed, execute the falseBranch
+                if (!elseIfExecuted && ifNode.getFalseBranch() != null) {
+                    for (ASTNode branchStatement : ifNode.getFalseBranch()) {
+                        executeStatement(branchStatement, context, outputs);
+                        if (context.isWaitingForInput()) {
+                            return;  // Stop execution if waiting for input
+                        }
+                    }
+                }
+            }
+        } else if (statement instanceof ForRangeNode) {
+            ForRangeNode forNode = (ForRangeNode) statement;
+            List<ASTNode> bodyToExecute = forNode.getBody();
+
+            logger.info("Executing forNode with body of size: " + bodyToExecute.size());
+        
+            int start = (int) forNode.getStartExpr().evaluate(context); 
+            int end = (int) forNode.getEndExpr().evaluate(context); 
+        
+            int increment = 1;
+            if (forNode.getIncrementExpr() != null) {
+                increment = (int) forNode.getIncrementExpr().evaluate(context); 
+            }
+            for (int i = start; i <= end; i += increment) {
+                for (ASTNode branchStatement : bodyToExecute) {
+                    executeStatement(branchStatement, context, outputs);
+                    
+                    if (context.isWaitingForInput()) {
+                        return;
+                    }
+                }
+            }
+            
+            logger.info("Start of cicle: " + start);
+            logger.info("End of cicle " + end);
+            logger.info("Iterative value: " + increment);
+            
+        } else if (statement instanceof ForRangeNodeWithIterator) {
+            ForRangeNodeWithIterator forNode = (ForRangeNodeWithIterator) statement;
+            List<ASTNode> bodyToExecute = forNode.getBody();
+        
+            int start = (int) forNode.getStartExpr().evaluate(context); 
+            int end = (int) forNode.getEndExpr().evaluate(context); 
+            int increment = 1;
+            if (forNode.getIncrementExpr() != null) {
+                increment = (int) forNode.getIncrementExpr().evaluate(context); 
+            }
+        
+            String iteratorVar = forNode.getIterator();
+        
+            for (int i = start; i <= end; i += increment) {
+                context.setVariable(iteratorVar, i);
+                
+                System.out.println("ForRangeNodeWithIterator - Iteration: " + i + ", Iterator Variable: " + iteratorVar);
+        
+                for (ASTNode branchStatement : bodyToExecute) {
+                    executeStatement(branchStatement, context, outputs);
+                }
+            }
+        
+            logger.info("Executed ForRangeNodeWithIterator from " + start + " to " + end + " with step " + increment);
+        } else if (statement instanceof ForArrayNode) {
+            ForArrayNode forArrayNode = (ForArrayNode) statement;
+            List<ASTNode> bodyToExecute = forArrayNode.getBody();
+            String indexVar = forArrayNode.getIndexVar();
+            ExpressionNode arrayExpr = forArrayNode.getArrayExpr();
+        
+            // Evaluate the array expression (e.g., obj.ax)
+            Object arrayObj = arrayExpr.evaluate(context);
+        
+            // Ensure the result is a List or Array
+            if (arrayObj instanceof List) {
+                List<?> list = (List<?>) arrayObj;
+                for (int i = 0; i < list.size(); i++) {
+                    context.setVariable(indexVar, list.get(i));
+                    for (ASTNode branchStatement : bodyToExecute) {
+                        executeStatement(branchStatement, context, outputs);
+                        if (context.isWaitingForInput()) {
+                            return;
+                        }
+                    }
+                }
+            } else if (arrayObj instanceof Object[]) {
+                Object[] array = (Object[]) arrayObj;
+                for (int i = 0; i < array.length; i++) {
+                    context.setVariable(indexVar, array[i]);
+                    for (ASTNode branchStatement : bodyToExecute) {
+                        executeStatement(branchStatement, context, outputs);
+                        if (context.isWaitingForInput()) {
+                            return;
+                        }
+                    }
+                }
+            } else {
+                throw new RuntimeException("Expected an array or list for the for-each loop, but got: " + arrayObj);
+            }
+        } else {
             String errorMsg = "Unknown statement type: " + statementType;
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
@@ -246,6 +460,7 @@ public class Executor {
                 executeStatement(statement, context, outputs);
     
                 if (context.isWaitingForInput()) {
+                    // deuda tecnica xd
                     throw new RuntimeException("Functions cannot perform read operations.");
                 }
     
@@ -279,4 +494,18 @@ public class Executor {
             throw new RuntimeException("Invalid input format.");
         }
     }
+
+    private Object getDefaultFieldValue(String type) {
+        switch (type) {
+            case "int":
+                return 0;
+            case "float":
+                return 0.0f;
+            case "boolean":
+                return false;
+            default:
+                return null; // Default for objects
+        }
+    }
+    
 }

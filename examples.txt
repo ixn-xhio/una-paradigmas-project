@@ -23,15 +23,19 @@ read(obj.y);
 print(obj.x); 
 print(obj.b);
 print(sum(obj.x, obj.y)); 
-print('hola' + 'como esta');
+print('hola ' + 'como esta');
 
 for (0 -> 5, += 1) {
     print('hola');
     print('vamos');
 }
 
+for (i, 0 -> 3, += 1) {     
+    print(obj.ax[i]);   
+}
+
 for (i : obj.ax) {
-    print(i);
+    print('vamos a sumar un string y un int ' + i);
 }
 
 do {

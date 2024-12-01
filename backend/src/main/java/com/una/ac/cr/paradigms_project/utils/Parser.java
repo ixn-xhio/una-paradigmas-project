@@ -95,32 +95,73 @@ public class Parser {
         return new FunctionNode(name, params, body);
     }
 
-    private ASTNode classDeclaration(){
+    private ASTNode classDeclaration() {
         consume(TokenType.PUBLIC);
         consume(TokenType.CLASS);
         String name = consume(TokenType.IDENTIFIER).getValue();
         consume(TokenType.LBRACE);
         ClassNode classNode = new ClassNode(name);
-        while(currentToken.getType() != TokenType.RBRACE){
-            classNode.addField(fieldDeclaration());
+    
+        while (currentToken.getType() != TokenType.RBRACE) {
+            if (currentToken.getType() == TokenType.FUNCTION) {
+                classNode.addMethod(methodDeclaration());
+            } else {
+                classNode.addField(fieldDeclaration());
+            }
         }
+    
         consume(TokenType.RBRACE);
         consume(TokenType.SEMICOLON);
         definedTypes.add(name); // Add class name to known types
         return classNode;
+    }  
+      
+    private MethodNode methodDeclaration() {
+        consume(TokenType.FUNCTION); // Consume 'function'
+        String name = consume(TokenType.IDENTIFIER).getValue(); // Method name
+        consume(TokenType.LPAREN); // Consume '('
+        List<Parameter> parameters = parameterList(); // Parse parameter list
+        consume(TokenType.RPAREN); // Consume ')'
+    
+        String returnType = null;
+        if (currentToken.getType() == TokenType.COLON) {
+            consume(TokenType.COLON); // Consume ':'
+            returnType = consume(TokenType.IDENTIFIER).getValue(); // Return type
+        }
+    
+        consume(TokenType.LBRACE); // Consume '{'
+        List<ASTNode> body = new ArrayList<>();
+        while (currentToken.getType() != TokenType.RBRACE) {
+            body.add(statement()); // Parse method body
+        }
+        consume(TokenType.RBRACE); // Consume '}'
+    
+        return new MethodNode(name, parameters, returnType, body);
     }
     
+
     private FieldNode fieldDeclaration() {
         Token typeToken = currentToken;
     
+        // Debugging type token
+        System.out.println("Parsing field, type: " + typeToken.getValue());
+    
         // Handle primitive types like int, float, or integer
         if (typeToken.getType() == TokenType.INT || typeToken.getType() == TokenType.FLOAT || typeToken.getType() == TokenType.INTEGER || typeToken.getType() == TokenType.BOOL) {
-            consume(typeToken.getType());
+            consume(typeToken.getType()); // Consume the type (int, float, etc.)
             String name = consume(TokenType.IDENTIFIER).getValue(); // Variable name
-            consume(TokenType.ASSIGN); // Consume '='
-            ExpressionNode expr = expression(); // Parse the assigned value
+    
+            ExpressionNode expr = null;
+            if (currentToken.getType() == TokenType.ASSIGN) {
+                consume(TokenType.ASSIGN); // Consume '='
+                expr = expression(); // Parse the assigned value
+            }
+    
+            // Debugging value parsing
+            System.out.println("Field: " + name + ", value: " + (expr != null ? expr : "null"));
+    
             consume(TokenType.SEMICOLON); // Consume ';'
-            return new FieldNode(typeToken.getValue(), name, expr);
+            return new FieldNode(typeToken.getValue(), name, expr); // Return the FieldNode with the value
         }
     
         // Handle array types like Array<int>
@@ -130,7 +171,7 @@ public class Parser {
     
             // Accept primitive types (int, float, etc.) or custom identifiers
             String elementType;
-            if (currentToken.getType() == TokenType.INT || currentToken.getType() == TokenType.FLOAT || typeToken.getType() == TokenType.BOOL) {
+            if (currentToken.getType() == TokenType.INT || currentToken.getType() == TokenType.FLOAT || currentToken.getType() == TokenType.BOOL) {
                 elementType = consume(currentToken.getType()).getValue(); // Handle primitives like int
             } else if (currentToken.getType() == TokenType.IDENTIFIER) {
                 elementType = consume(TokenType.IDENTIFIER).getValue(); // Handle identifiers like T
@@ -141,19 +182,21 @@ public class Parser {
             consume(TokenType.GREATER);   // Consume '>'
     
             String name = consume(TokenType.IDENTIFIER).getValue(); // Variable name
-            consume(TokenType.ASSIGN); // Consume '='
-            ExpressionNode expr = expression(); // Parse the array literal or assignment
+            ExpressionNode expr = null;
+            if (currentToken.getType() == TokenType.ASSIGN) {
+                consume(TokenType.ASSIGN); // Consume '='
+                expr = expression(); // Parse the array literal or assignment
+            }
+    
             consume(TokenType.SEMICOLON); // Consume ';'
-            
             if (expr instanceof ArrayLiteralNode) {
                 ((ArrayLiteralNode) expr).setElementType(elementType);
             }
-            System.out.println("creating FieldNode " + elementType + " " +expr);
             return new FieldNode("Array<" + elementType + ">", name, expr);
         }
     
         throw new RuntimeException("Invalid field declaration");
-    }
+    }    
     
     
 
